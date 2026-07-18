@@ -1,30 +1,33 @@
 #! /usr/bin/env nix-shell
-#! nix-shell -p "haskellPackages.ghcWithPackages (p: [p.mustache p.pandoc p.shake p.deriving-aeson p.feed])"
+#! nix-shell -p "haskellPackages.ghcWithPackages (p: [p.mustache p.pandoc p.shake p.feed p.yaml])"
 #! nix-shell -i "runhaskell --ghc-arg=-threaded"
 {-# LANGUAGE GHC2024 #-}
 {-# LANGUAGE ApplicativeDo #-}
-{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -Wno-x-partial #-}
 
 module Main where
 
-import Control.Monad (forM)
-import Data.Aeson ((.=))
+import Control.Monad (when)
+import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Reader (ReaderT, ask, runReaderT)
+import Control.Monad.Trans (lift)
+import Data.Aeson (FromJSON, ToJSON, (.=))
 import Data.Aeson.Types qualified as A
 import Data.Function (on)
 import Data.Functor ((<&>))
 import Data.HashMap.Strict qualified as HM
-import Data.List (nub, nubBy, sortOn)
-import Data.Maybe (maybeToList)
+import Data.List (find, nub, nubBy, sortOn)
+import Data.Maybe (fromMaybe)
 import Data.Ord qualified as Ord
 import Data.Text qualified as T
 import Data.Text.IO.Utf8 qualified as TU
 import Data.Text.Lazy qualified as TL
 import Data.Time (UTCTime, defaultTimeLocale, formatTime, parseTimeM)
-import Deriving.Aeson
-import Deriving.Aeson.Stock (PrefixedSnake)
+import Data.Yaml qualified as Yaml
 import Development.Shake (Action, Rules, (%>), (|%>), (~>))
 import Development.Shake qualified as Shake
 import Development.Shake.FilePath ((<.>), (</>))
@@ -39,230 +42,390 @@ import Prelude hiding (readFile, writeFile)
 
 main :: IO ()
 main = do
+  config <- Yaml.decodeFileThrow "config.yaml"
+  when (null config.authors) $ do
+    error $ "There should be at least one author"
+
   templateCache <- newTemplateCache
-  postCache <- newPostCache
+  postCache <- newPostCache config
+  let ctx = Context config templateCache postCache
 
   Shake.shakeArgs Shake.shakeOptions $ do
     Shake.withTargetDocs "Build the site" $
-      "build" ~> buildTargets postCache
+      "build" ~> runRAction ctx buildTargets
     Shake.withTargetDocs "Clean the built site" $
       "clean" ~> Shake.removeFilesAfter outputDir ["//*"]
 
-    Shake.withoutTargets $ buildRules templateCache postCache
+    Shake.withoutTargets $ runRRules ctx buildRules
 
-outputDir :: String
+-- Settings
+
+outputDir :: FilePath
 outputDir = "_site"
 
-siteRoot :: T.Text
-siteRoot = "https://projects.abhinavsarkar.net/dum-blog"
-
-siteTitle :: T.Text
-siteTitle = "Dum Dev Blog"
-
-assetGlobs :: [String]
+assetGlobs :: [Shake.FilePattern]
 assetGlobs = ["css/*.css", "images/*.png"]
 
-pagePaths :: [String]
+pagePaths :: [FilePath]
 pagePaths = []
 
-postGlobs :: [String]
+postGlobs :: [Shake.FilePattern]
 postGlobs = ["posts/*.md"]
 
-buildTargets :: PostCache -> Action ()
-buildTargets postCache = do
-  assetPaths <- Shake.getDirectoryFiles "" assetGlobs
-  postPaths <- Shake.getDirectoryFiles "" postGlobs
+archivePath :: FilePath
+archivePath = "archive"
+
+tagArchivePath :: FilePath
+tagArchivePath = "tags"
+
+homePostCount :: Int
+homePostCount = 5
+
+feedFileName :: String
+feedFileName = "feed.atom"
+
+-- Config
+
+data AuthorConfig = AuthorConfig
+  { name :: T.Text,
+    uri :: T.Text,
+    email :: T.Text,
+    copyrightYear :: T.Text
+  }
+  deriving (Show)
+
+data SiteConfig = SiteConfig
+  { title :: T.Text,
+    url :: T.Text,
+    description :: T.Text,
+    authors :: [AuthorConfig]
+  }
+  deriving (Show)
+
+instance ToJSON AuthorConfig where
+  toJSON AuthorConfig {..} =
+    A.object
+      [ "name" .= name,
+        "uri" .= uri,
+        "email" .= email,
+        "copyright_year" .= copyrightYear
+      ]
+
+instance ToJSON SiteConfig where
+  toJSON SiteConfig {..} =
+    A.object
+      [ "title" .= title,
+        "url" .= url,
+        "description" .= description,
+        "author" .= head authors,
+        "authors" .= authors
+      ]
+
+instance FromJSON AuthorConfig where
+  parseJSON = A.withObject "AuthorConfig" $ \o ->
+    AuthorConfig
+      <$> o A..: "name"
+      <*> o A..: "uri"
+      <*> o A..: "email"
+      <*> o A..: "copyright_year"
+
+instance FromJSON SiteConfig where
+  parseJSON = A.withObject "SiteConfig" $ \o ->
+    SiteConfig
+      <$> o A..: "title"
+      <*> o A..: "url"
+      <*> o A..: "description"
+      <*> o A..: "authors"
+
+-- Shake
+
+type PostCache = FilePath -> Action Post
+
+type TemplateCache = FilePath -> Action Mus.Template
+
+data Context = Context
+  { config :: SiteConfig,
+    templateCache :: TemplateCache,
+    postCache :: PostCache
+  }
+
+class (MonadIO m, MonadFail m) => MonadAction m where
+  liftAction :: Action a -> m a
+
+instance MonadAction Action where
+  liftAction = id
+
+type RAction = ReaderT Context Action
+
+type RRules = ReaderT Context Rules
+
+instance MonadAction RAction where
+  liftAction = lift
+
+runRAction :: Context -> RAction a -> Action a
+runRAction = flip runReaderT
+
+runRRules :: Context -> RRules a -> Rules a
+runRRules = flip runReaderT
+
+-- Build
+
+buildTargets :: RAction ()
+buildTargets = do
+  assetPaths <- getDirFiles assetGlobs
+  postPaths <- getDirFiles postGlobs
 
   need assetPaths
   need $ map indexHtmlOutputPath pagePaths
   need $ map indexHtmlOutputPath postPaths
-  need ["feed.atom", "archive/index.html", "index.html"]
+  need [feedFileName, archivePath </> "index.html", "index.html"]
 
-  posts <- Shake.forP postPaths postCache
-  need
-    [ indexHtmlOutputPath $ "tags" </> T.unpack tag
-    | post <- posts,
-      tag <- postTags $ postMeta post
-    ]
+  ctx <- ask
+  posts <- forP postPaths $ getPost ctx.postCache
+  need [indexHtmlOutputPath $ tagArchivePath </> T.unpack tag | post <- posts, tag <- post.meta.tags]
 
-buildRules :: TemplateCache -> PostCache -> Rules ()
-buildRules templateCache postCache = do
+buildRules :: RRules ()
+buildRules = do
   assetRules
-  pageRules templateCache
-  postRules templateCache postCache
-  postFeedRules postCache
-  archiveRules templateCache postCache
-  tagArchiveRules templateCache postCache
-  homeRules templateCache postCache
+  pageRules
+  postRules
+  postFeedRules
+  archiveRules
+  tagArchiveRules
+  homeRules
 
 -- Assets
 
-assetRules :: Rules ()
+assetRules :: RRules ()
 assetRules =
   assetGlobs |@> \target -> do
     let src = Shake.dropDirectory1 target
-    Shake.copyFileChanged src target
-    Shake.putInfo $ "Copied " <> target <> " from " <> src
+    copyFileChanged src target
+    putInfo $ "Copied " <> target <> " from " <> src
 
 -- Pages
 
 data Page = Page
-  { pageTitle :: T.Text,
-    pageMainClass :: T.Text,
-    pageBaseUrl :: T.Text,
-    pageContent :: T.Text
+  { title :: T.Text,
+    mainClass :: T.Text,
+    baseUrl :: T.Text,
+    content :: T.Text,
+    config :: SiteConfig
   }
-  deriving (Show, Generic)
-  deriving (ToJSON) via PrefixedSnake "page" Page
+  deriving (Show)
 
-getBaseUrl :: Action T.Text
-getBaseUrl =
-  Shake.getEnvWithDefault "DEV" "ENV"
-    >>= pure . \case
-      "PROD" -> siteRoot
+instance ToJSON Page where
+  toJSON Page {..} =
+    A.object
+      [ "title" .= title,
+        "main_class" .= mainClass,
+        "base_url" .= baseUrl,
+        "content" .= content,
+        "site" .= config
+      ]
+
+getBaseUrl :: (MonadAction m) => SiteConfig -> m T.Text
+getBaseUrl config =
+  liftAction (Shake.getEnvWithDefault "DEV" "ENV")
+    <&> \case
+      "PROD" -> config.url
       _ -> ""
 
-mkPage :: T.Text -> T.Text -> T.Text -> Action Page
+mkPage :: T.Text -> T.Text -> T.Text -> RAction Page
 mkPage title mainClass content = do
-  baseUrl <- getBaseUrl
-  pure $ Page title mainClass baseUrl content
+  ctx <- ask
+  baseUrl <- getBaseUrl ctx.config
+  pure $ Page {config = ctx.config, ..}
 
-pageRules :: TemplateCache -> Rules ()
-pageRules templateCache =
+pageRules :: RRules ()
+pageRules =
   map indexHtmlOutputPath pagePaths |@> \target -> do
     let src = indexHtmlSourcePath target
-    (meta, html) <- markdownToHtml @(HM.HashMap T.Text _) src
+    (meta, html) <- markdownToHtml src
 
-    page <- mkPage (meta HM.! "title") "page" html
-    applyTemplateAndWrite templateCache "default.html" page target
-    Shake.putInfo $ "Built " <> target <> " from " <> src
+    mkPage (meta HM.! ("title" :: T.Text)) "page" html
+      >>= applyTemplateAndWrite "default.html" target
+    putInfo $ "Built " <> target <> " from " <> src
 
 -- Posts
 
 data PostMeta = PostMeta
-  { postTitle :: T.Text,
-    postAuthor :: Maybe T.Text,
-    postTags :: [T.Text]
+  { title :: T.Text,
+    author :: Maybe T.Text,
+    tags :: [T.Text]
   }
-  deriving (Show, Generic)
-  deriving (FromJSON, ToJSON) via PrefixedSnake "post" PostMeta
+  deriving (Show)
+
+instance FromJSON PostMeta where
+  parseJSON = A.withObject "PostMeta" $ \o ->
+    PostMeta
+      <$> o A..: "title"
+      <*> o A..:? "author"
+      <*> o A..:? "tags" A..!= []
+
+instance ToJSON PostMeta where
+  toJSON PostMeta {..} =
+    A.object
+      [ "title" .= title,
+        "author" .= author,
+        "tags" .= tags
+      ]
 
 data Post = Post
-  { postMeta :: PostMeta,
-    postDate :: T.Text,
-    postDateTime :: UTCTime,
-    postContent :: T.Text,
-    postUrl :: T.Text,
-    postBaseUrl :: T.Text
+  { meta :: PostMeta,
+    date :: T.Text,
+    dateTime :: UTCTime,
+    content :: T.Text,
+    url :: T.Text,
+    baseUrl :: T.Text,
+    config :: SiteConfig
   }
-  deriving (Show, Generic)
-  deriving (ToJSON) via PrefixedSnake "post" Post
+  deriving (Show)
 
-type PostCache = FilePath -> Action Post
+instance ToJSON Post where
+  toJSON Post {..} =
+    A.object
+      [ "meta" .= meta,
+        "date" .= date,
+        "date_time" .= dateTime,
+        "content" .= content,
+        "url" .= url,
+        "base_url" .= baseUrl,
+        "site" .= config
+      ]
 
-readPost :: FilePath -> Action Post
-readPost postPath = do
-  date <-
+readPost :: (MonadAction m) => SiteConfig -> FilePath -> m Post
+readPost config postPath = do
+  dateTime <-
     parseTimeM False defaultTimeLocale "%Y-%-m-%-d"
       . take 10
       . Shake.takeBaseName
       $ postPath
-  let formattedDate =
-        T.pack $ formatTime @UTCTime defaultTimeLocale "%B %e, %Y" date
+  let date = T.pack $ formatTime @UTCTime defaultTimeLocale "%B %e, %Y" dateTime
 
-  (postMeta, html) <- markdownToHtml postPath
-  Shake.putInfo $ "Read " <> postPath
+  (meta, content) <- markdownToHtml postPath
+  putInfo $ "Read " <> postPath
 
-  baseUrl <- getBaseUrl
+  baseUrl <- getBaseUrl config
   return $
     Post
-      { postMeta,
-        postDate = formattedDate,
-        postDateTime = date,
-        postContent = html,
-        postUrl = baseUrl <> "/" <> T.pack (Shake.dropExtension postPath) <> "/",
-        postBaseUrl = baseUrl
+      { url = baseUrl <> "/" <> T.pack (Shake.dropExtension postPath) <> "/",
+        ..
       }
 
-newPostCache :: IO PostCache
-newPostCache = Shake.newCacheIO readPost
+newPostCache :: SiteConfig -> IO PostCache
+newPostCache = Shake.newCacheIO . readPost
 
-getPosts :: PostCache -> Action [Post]
-getPosts postCache = do
-  postPaths <- Shake.getDirectoryFiles "" postGlobs
-  sortOn (Ord.Down . postDate) <$> forM postPaths postCache
+getPost :: (MonadAction m) => PostCache -> FilePath -> m Post
+getPost postCache = liftAction . postCache
 
-postRules :: TemplateCache -> PostCache -> Rules ()
-postRules templateCache postCache =
+getPosts :: RAction [Post]
+getPosts = do
+  ctx <- ask
+  postPaths <- getDirFiles postGlobs
+  sortOn (Ord.Down . date) <$> traverse (getPost ctx.postCache) postPaths
+
+postRules :: RRules ()
+postRules =
   map indexHtmlOutputPath postGlobs |@> \target -> do
+    ctx <- ask
     let src = indexHtmlSourcePath target
-    post <- postCache src
-    postHtml <- applyTemplate templateCache "post.html" post
+    post <- getPost ctx.postCache src
+    postHtml <- applyTemplate "post.html" post
 
-    page <- mkPage (postTitle $ postMeta post) "post" postHtml
-    applyTemplateAndWrite templateCache "default.html" page target
-    Shake.putInfo $ "Built " <> target <> " from " <> src
+    mkPage post.meta.title "post" postHtml
+      >>= applyTemplateAndWrite "default.html" target
+    putInfo $ "Built " <> target <> " from " <> src
 
-postFeedRules :: PostCache -> Rules ()
-postFeedRules postCache =
-  "feed.atom" @> \target ->
-    getPosts postCache
+postFeedRules :: RRules ()
+postFeedRules =
+  feedFileName @> \target -> do
+    ctx <- ask
+    getPosts
       >>= traverse mkPostEntry
-      >>= writeFeed (siteRoot <> "/feed.atom") "Abhinav Sarkar" siteTitle target
+      >>= writeFeed
+        (ctx.config.url <> "/" <> T.pack feedFileName)
+        ctx.config.title
+        target
 
-archiveRules :: TemplateCache -> PostCache -> Rules ()
-archiveRules templateCache postCache =
-  "archive/index.html" @> \target ->
-    getPosts postCache
-      >>= writeArchive templateCache (T.pack "Archive") target
+archiveRules :: RRules ()
+archiveRules =
+  (archivePath </> "index.html") @> \target ->
+    getPosts >>= writeArchive (T.pack "Archive") target
 
-writeArchive :: TemplateCache -> T.Text -> FilePath -> [Post] -> Action ()
-writeArchive templateCache title target posts = do
-  baseUrl <- getBaseUrl
+writeArchive :: T.Text -> FilePath -> [Post] -> RAction ()
+writeArchive title target posts = do
+  ctx <- ask
+  baseUrl <- getBaseUrl ctx.config
   html <-
-    applyTemplate templateCache "archive.html" $
-      A.object ["title" .= title, "posts" .= posts, "base_url" .= baseUrl]
-  page <- mkPage title "archive" html
-  applyTemplateAndWrite templateCache "default.html" page target
-  Shake.putInfo $ "Built " <> target
+    applyTemplate "archive.html" $
+      A.object
+        [ "title" .= title,
+          "posts" .= posts,
+          "base_url" .= baseUrl,
+          "site" .= ctx.config
+        ]
+  mkPage title "archive" html >>= applyTemplateAndWrite "default.html" target
+  putInfo $ "Built " <> target
 
-tagArchiveRules :: TemplateCache -> PostCache -> Rules ()
-tagArchiveRules templateCache postCache =
-  "tags/*/index.html" @> \target -> do
+tagArchiveRules :: RRules ()
+tagArchiveRules =
+  (tagArchivePath </> "*/index.html") @> \target -> do
     let tag = T.pack $ Shake.splitDirectories target !! 2
-    getPosts postCache
-      <&> filter ((tag `elem`) . postTags . postMeta)
-      >>= writeArchive templateCache (T.pack "Posts tagged “" <> tag <> T.pack "”") target
+    getPosts
+      <&> filter ((tag `elem`) . tags . meta)
+      >>= writeArchive (T.pack "Posts tagged “" <> tag <> T.pack "”") target
 
-homeRules :: TemplateCache -> PostCache -> Rules ()
-homeRules templateCache postCache =
+homeRules :: RRules ()
+homeRules =
   "index.html" @> \target -> do
-    posts <- take 5 <$> getPosts postCache
+    ctx <- ask
+    posts <- take homePostCount <$> getPosts
+    baseUrl <- getBaseUrl ctx.config
+    html <-
+      applyTemplate "home.html" $
+        A.object
+          [ "posts" .= posts,
+            "base_url" .= baseUrl,
+            "site" .= ctx.config
+          ]
 
-    baseUrl <- getBaseUrl
-    html <- applyTemplate templateCache "home.html" $ A.object ["posts" .= posts, "base_url" .= baseUrl]
-
-    page <- mkPage "Home" "home" html
-    applyTemplateAndWrite templateCache "default.html" page target
-    Shake.putInfo $ "Built " <> target
+    mkPage "Home" "home" html >>= applyTemplateAndWrite "default.html" target
+    putInfo $ "Built " <> target
 
 -- Shake utils
 
 prependOutputDir :: FilePath -> FilePath
 prependOutputDir = (outputDir </>)
 
-need :: [FilePath] -> Action ()
-need = Shake.need . map prependOutputDir
+need :: (MonadAction m) => [FilePath] -> m ()
+need = liftAction . Shake.need . map prependOutputDir
 
-(|@>) :: [Shake.FilePattern] -> (FilePath -> Action ()) -> Rules ()
-filePatterns |@> action =
-  map prependOutputDir filePatterns |%> \target ->
-    Shake.need ["blog.hs"] >> action target
+putInfo :: (MonadAction m) => String -> m ()
+putInfo = liftAction . Shake.putInfo
 
-(@>) :: Shake.FilePattern -> (FilePath -> Action ()) -> Rules ()
-filePattern @> action =
-  prependOutputDir filePattern %> \target ->
-    Shake.need ["blog.hs"] >> action target
+copyFileChanged :: (MonadAction m) => FilePath -> FilePath -> m ()
+copyFileChanged src dst = liftAction $ Shake.copyFileChanged src dst
+
+getDirFiles :: (MonadAction m) => [Shake.FilePattern] -> m [FilePath]
+getDirFiles = liftAction . Shake.getDirectoryFiles ""
+
+forP :: (MonadAction m) => [a] -> (a -> Action b) -> m [b]
+forP xs = liftAction . Shake.forP xs
+
+(|@>) :: [Shake.FilePattern] -> (FilePath -> RAction ()) -> RRules ()
+filePatterns |@> f = do
+  ctx <- ask
+  lift $
+    map prependOutputDir filePatterns |%> \target ->
+      Shake.need ["blog.hs", "config.yaml"] >> runRAction ctx (f target)
+
+(@>) :: Shake.FilePattern -> (FilePath -> RAction ()) -> RRules ()
+fp @> f = do
+  ctx <- ask
+  lift $
+    prependOutputDir fp %> \target ->
+      Shake.need ["blog.hs", "config.yaml"] >> runRAction ctx (f target)
 
 indexHtmlOutputPath :: FilePath -> FilePath
 indexHtmlOutputPath srcPath = Shake.dropExtension srcPath </> "index.html"
@@ -287,8 +450,8 @@ writeFile fp content = do
 
 -- Pandoc utils
 
-markdownToHtml :: (FromJSON a) => FilePath -> Action (a, T.Text)
-markdownToHtml filePath = do
+markdownToHtml :: (MonadAction m, FromJSON a) => FilePath -> m (a, T.Text)
+markdownToHtml filePath = liftAction $ do
   content <- readFile filePath
   Shake.quietly . Shake.traced "Markdown to HTML" $ do
     pandoc@(Pandoc meta _) <- runPandoc $ Pandoc.readMarkdown readerOptions content
@@ -324,20 +487,18 @@ markdownToHtml filePath = do
 
 -- Mustache utils
 
-type TemplateCache = FilePath -> Action Mus.Template
-
-applyTemplate :: (ToJSON a) => TemplateCache -> String -> a -> Action T.Text
-applyTemplate templateCache templateName context = do
-  tmpl <- templateCache $ "templates" </> templateName
+applyTemplate :: (ToJSON a) => String -> a -> RAction T.Text
+applyTemplate templateName context = do
+  ctx <- ask
+  tmpl <- lift $ ctx.templateCache $ "templates" </> templateName
   case Mus.checkedSubstitute tmpl (A.toJSON context) of
     ([], text) -> return text
     (errs, _) ->
       fail $ "Error while substituting template " <> templateName <> ": " <> unlines (map show errs)
 
-applyTemplateAndWrite ::
-  (ToJSON a) => TemplateCache -> String -> a -> FilePath -> Action ()
-applyTemplateAndWrite templateCache templateName context outputPath =
-  applyTemplate templateCache templateName context >>= writeFile outputPath
+applyTemplateAndWrite :: (ToJSON a) => String -> FilePath -> a -> RAction ()
+applyTemplateAndWrite templateName outputPath context =
+  applyTemplate templateName context >>= lift . writeFile outputPath
 
 readTemplate :: FilePath -> Action Mus.Template
 readTemplate templatePath = do
@@ -358,31 +519,34 @@ newTemplateCache = Shake.newCacheIO readTemplate
 
 -- Feed utils
 
-feedAuthor :: T.Text -> Atom.Person
-feedAuthor authorName =
+feedAuthor :: AuthorConfig -> Atom.Person
+feedAuthor AuthorConfig {..} =
   Atom.Person
-    { Atom.personName = authorName,
-      Atom.personURI = Just "https://abhinavsarkar.net/about/",
-      Atom.personEmail = Just "abhinav@abhinavsarkar.net",
-      Atom.personOther = []
+    { personName = name,
+      personURI = Just uri,
+      personEmail = Just email,
+      personOther = []
     }
 
-mkPostEntry :: Post -> Action Atom.Entry
-mkPostEntry Post {postMeta = PostMeta {..}, ..} = do
-  let url = if siteRoot `T.isPrefixOf` postUrl then postUrl else siteRoot <> postUrl
-      updated = T.pack $ formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%SZ" postDateTime
+mkPostEntry :: Post -> RAction Atom.Entry
+mkPostEntry post@Post {meta} = do
+  let siteUrl = post.config.url
+      authors = post.config.authors
+      entryUrl = if siteUrl `T.isPrefixOf` post.url then post.url else siteUrl <> post.url
+      entryUpdated = T.pack $ formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%SZ" post.dateTime
+      entryAuthor = fromMaybe (head authors) $ meta.author >>= \n -> find ((== n) . name) authors
   return $
     Atom.Entry
-      { entryId = url,
-        entryTitle = Atom.TextString postTitle,
-        entryUpdated = updated,
-        entryAuthors = maybeToList $ fmap feedAuthor postAuthor,
-        entryCategories = map (Atom.newCategory . T.strip) postTags,
-        entryContent = Just $ Atom.HTMLContent postContent,
+      { entryId = entryUrl,
+        entryTitle = Atom.TextString meta.title,
+        entryUpdated = entryUpdated,
+        entryAuthors = [feedAuthor entryAuthor],
+        entryCategories = map (Atom.newCategory . T.strip) meta.tags,
+        entryContent = Just $ Atom.HTMLContent post.content,
         entryContributor = [],
-        entryLinks = [(Atom.nullLink url) {Atom.linkRel = Just $ Left "alternate"}],
-        entryPublished = Just updated,
-        entryRights = Atom.TextString . ("© 2026, " <>) <$> postAuthor,
+        entryLinks = [(Atom.nullLink entryUrl) {Atom.linkRel = Just $ Left "alternate"}],
+        entryPublished = Just entryUpdated,
+        entryRights = Just $ Atom.TextString $ "© " <> entryAuthor.copyrightYear <> ", " <> entryAuthor.name,
         entrySource = Nothing,
         entrySummary = Nothing,
         entryInReplyTo = Nothing,
@@ -391,29 +555,31 @@ mkPostEntry Post {postMeta = PostMeta {..}, ..} = do
         entryOther = []
       }
 
-mkFeed :: Atom.URI -> T.Text -> T.Text -> [Atom.Entry] -> Atom.Feed
-mkFeed feedUrl authorName title entries =
-  Atom.Feed
-    { feedId = feedUrl,
-      feedTitle = Atom.TextString title,
-      feedUpdated = maximum $ map Atom.entryUpdated entries,
-      feedAuthors = nubBy ((==) `on` Atom.personURI) $ concatMap Atom.entryAuthors entries,
-      feedCategories = map Atom.newCategory . nub . map Atom.catTerm . concatMap Atom.entryCategories $ entries,
-      feedContributors = [],
-      feedGenerator = Nothing,
-      feedIcon = Nothing,
-      feedLinks = [(Atom.nullLink feedUrl) {Atom.linkRel = Just $ Left "self"}, Atom.nullLink siteRoot],
-      feedLogo = Nothing,
-      feedRights = Just $ Atom.TextString $ "© 2026, " <> authorName,
-      feedSubtitle = Nothing,
-      feedEntries = entries,
-      feedAttrs = [],
-      feedOther = []
-    }
+mkFeed :: Atom.URI -> T.Text -> SiteConfig -> [Atom.Entry] -> Atom.Feed
+mkFeed feedUrl title config entries =
+  let author = head config.authors
+   in Atom.Feed
+        { feedId = feedUrl,
+          feedTitle = Atom.TextString title,
+          feedUpdated = maximum $ map Atom.entryUpdated entries,
+          feedAuthors = nubBy ((==) `on` Atom.personURI) $ concatMap Atom.entryAuthors entries,
+          feedCategories = map Atom.newCategory . nub . map Atom.catTerm . concatMap Atom.entryCategories $ entries,
+          feedContributors = [],
+          feedGenerator = Nothing,
+          feedIcon = Nothing,
+          feedLinks = [(Atom.nullLink feedUrl) {Atom.linkRel = Just $ Left "self"}, Atom.nullLink config.url],
+          feedLogo = Nothing,
+          feedRights = Just $ Atom.TextString $ "© " <> author.copyrightYear <> ", " <> author.name,
+          feedSubtitle = Nothing,
+          feedEntries = entries,
+          feedAttrs = [],
+          feedOther = []
+        }
 
-writeFeed :: Atom.URI -> T.Text -> T.Text -> String -> [Atom.Entry] -> Action ()
-writeFeed feedUrl authorName title out entries =
-  case Atom.textFeed (mkFeed feedUrl authorName title entries) of
+writeFeed :: Atom.URI -> T.Text -> String -> [Atom.Entry] -> RAction ()
+writeFeed feedUrl title out entries = do
+  ctx <- ask
+  lift $ case Atom.textFeed (mkFeed feedUrl title ctx.config entries) of
     Nothing -> fail "Unable to create feed"
     Just content -> do
       writeFile out $ TL.toStrict content

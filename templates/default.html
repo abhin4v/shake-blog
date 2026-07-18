@@ -5,21 +5,21 @@
     <meta name="language" content="EN">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Dum Dev Blog — {{title}}</title>
-    <meta name="description" content="The blog for the Dum prgramming languages." />
-    <meta name="author" content="Abhinav Sarkar" />
-    <meta name="copyright" content="Abhinav Sarkar 2026" />
+    <title>{{site.title}} — {{title}}</title>
+    <meta name="description" content="{{site.description}}" />
+    <meta name="author" content="{{site.author.name}}" />
+    <meta name="copyright" content="{{site.author.name}} {{site.author.copyright_year}}" />
     <meta name="robots" content="noindex, nofollow" />
 
     <link rel="stylesheet" type="text/css" href="{{base_url}}/css/default.css" />
-    <link rel="me" href="https://abhinavsarkar.net/about/" type="text/html">
-    <link rel="author" href="https://abhinavsarkar.net/about/" type="text/html">
+    <link rel="me" href="{{site.author.uri}}" type="text/html">
+    <link rel="author" href="{{site.author.uri}}" type="text/html">
     <link rel="alternate" type="application/atom+xml" title="Feed" href="{{base_url}}/feed.atom">
   </head>
   <body>
     <header>
       <nav>
-        <a href="{{base_url}}/" style="font-weight: bold">Dum Dev Blog</a>
+        <a href="{{base_url}}/" style="font-weight: bold">{{site.title}}</a>
         <a href="{{base_url}}/archive/">Archive</a>
       </nav>
     </header>
