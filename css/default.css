@@ -196,3 +196,21 @@ ul.tags li {
   border-radius: 5px;
   padding: 0 5px;
 }
+
+.feed-icon {
+  float: right;
+}
+
+.feed-icon > svg {
+  margin-bottom: -1.1em;
+}
+
+main.home .feed-icon > svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+main.archive .feed-icon > svg {
+  width: 1.5em;
+  height: 1.5em;
+}
