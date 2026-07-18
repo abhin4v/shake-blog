@@ -1,0 +1,12 @@
+<div class="post-info">
+  <p>
+    Posted on <time datetime="{{date_time}}">{{date}}</time>
+    {{#meta.author}} by {{meta.author}} {{/meta.author}}
+  </p>
+  <ul class="tags">
+    {{#meta.tags}}
+    <li><a href="/tags/{{.}}/">{{.}}</a></li>
+    {{/meta.tags}}
+  </ul>
+</div>
+{{{content}}}
