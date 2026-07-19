@@ -103,9 +103,7 @@ li {
 table {
   border-collapse: collapse;
   margin: 1em 0;
-  width: 100%;
-  display: block;
-  overflow-x: auto;
+  max-width: 100%;
 }
 table,
 th,
@@ -213,4 +211,12 @@ main.home .feed-icon > svg {
 main.archive .feed-icon > svg {
   width: 1.5em;
   height: 1.5em;
+}
+
+main hr {
+  max-width: 50%;
+}
+
+main #footnotes hr {
+  max-width: 100%;
 }

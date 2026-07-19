@@ -1,5 +1,5 @@
 ---
-title: Hosting on GitHub Pages
+title: Hosting Shake Blog on GitHub Pages
 tags:
   - guide
   - github-pages

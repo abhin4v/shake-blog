@@ -439,6 +439,7 @@ indexHtmlSourcePath =
 
 readFile :: FilePath -> Action T.Text
 readFile fp = do
+  Shake.need [fp]
   content <- Shake.liftIO $ TU.readFile fp
   Shake.trackRead [fp]
   return content
