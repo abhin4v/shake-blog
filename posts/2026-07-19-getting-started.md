@@ -55,6 +55,7 @@ In a different terminal, run `python3 -m http.server -d _site` to serve the webs
 ```
 ├── blog.hs              # the generator — edit to customize
 ├── config.yaml          # site identity (title, url, description, authors)
+├── contact.md           # standalone page (e.g. contact)
 ├── posts/               # markdown posts, one file per post
 │   └── YYYY-MM-DD-*.md
 ├── templates/           # mustache templates
@@ -95,7 +96,7 @@ The build settings live at the top of `blog.hs` in the `Settings` section:
 | `outputDir` | `"_site"` | Where the generated site goes |
 | `assetGlobs` | `["css/*.css", "images/*.png"]` | Patterns for static files to copy verbatim |
 | `postGlobs` | `["posts/*.md"]` | Glob pattern for finding post source files |
-| `pagePaths` | `[]` | List of standalone Markdown page sources (e.g. `["about.md"]`) |
+| `pagePaths` | `["contact.md"]` | List of standalone Markdown page sources (e.g. `["about.md", "contact.md"]`) |
 | `archivePath` | `"archive"` | Subdirectory for the post archive |
 | `tagArchivePath` | `"tags"` | Subdirectory for per-tag post listings |
 | `homePostCount` | `5` | Number of recent posts shown on the homepage |
@@ -112,8 +113,8 @@ directory (`_site` by default):
 _site/
 ├── index.html                  # homepage
 ├── feed.atom                   # Atom feed
-├── about/
-│   └── index.html              # standalone page (if `about.md` in pagePaths)
+├── contact/
+│   └── index.html              # standalone page (if `contact.md` in pagePaths)
 ├── css/
 │   └── default.css             # copied verbatim from source
 ├── images/
@@ -129,7 +130,7 @@ _site/
 ```
 
 Each post and standalone page gets its own directory with an `index.html` so
-URLs are clean (e.g. `/my-first-post/` or `/about/`).
+URLs are clean (e.g. `/my-first-post/` or `/contact/`).
 
 ## Writing Posts
 

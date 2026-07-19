@@ -67,7 +67,7 @@ assetGlobs :: [Shake.FilePattern]
 assetGlobs = ["css/*.css", "images/*.png"]
 
 pagePaths :: [FilePath]
-pagePaths = []
+pagePaths = ["contact.md"]
 
 postGlobs :: [Shake.FilePattern]
 postGlobs = ["posts/*.md"]
