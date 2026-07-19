@@ -148,7 +148,7 @@ tags:
 Post content goes here.
 ```
 
-### Template Variables
+## Template Variables
 
 Post pages receive:
 
@@ -170,7 +170,7 @@ Page (non-post) templates receive `site`, `base_url`, `title`, `main_class`, and
 
 `main_class` is a CSS class name set per-page by the generator (e.g. `"post"`, `"page"`, `"home"`, `"archive"`). It is set on `<main>` in the default template, letting you style different page types differently without extra template logic.
 
-### Environment and `base_url`
+## Environment and `base_url`
 
 Set `ENV=PROD` when building for deployment:
 

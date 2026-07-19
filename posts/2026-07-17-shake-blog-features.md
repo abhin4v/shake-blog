@@ -2,7 +2,6 @@
 title: Shake Blog Features in Detail
 tags:
   - shake
-  - haskell
   - guide
 author: Abhinav Sarkar
 ---
@@ -26,6 +25,10 @@ Posts are Markdown files with YAML front matter. We get [Pandoc]'s full Markdown
 Alongside posts, standalone pages (about, contact, etc.) can be added via the `pagePaths` setting. They work the same way but skip dates and tags.
 
 The site configuration supports multiple author profiles with name, URI, email, and copyright year. Posts can override the default author via front matter, and the Atom feed resolves each post to the matching author's full profile for proper attribution.
+
+### Code Highlighting
+
+Code blocks are highlighted by Pandoc using CSS classes. The default stylesheet provides syntax highlighting colors for code tokens. It uses the `light-dark()` function so that highlighting adapts to light and dark modes automatically.
 
 ## Clean URLs
 
@@ -62,10 +65,6 @@ The included GitHub Actions workflow builds the site with `ENV=PROD` and publish
 ## Extensibility
 
 Everything lives in `blog.hs`, organized into labeled sections. Extend `blog.hs` to add any functionality you want to your website, with full Shake API available to you.
-
----
-
-Shake Blog treats static site generation as a build problem and solves it with a build system. 
 
 [Shake]: https://shakebuild.com/
 [Pandoc]: https://pandoc.org/
