@@ -1,5 +1,8 @@
 <ul>
   {{#posts}}
-  <li><a href="{{url}}">{{meta.title}}</a> — {{date}}</li>
+  <li>
+    <a href="{{url}}">{{meta.title}}</a> —
+    <time datetime="{{date_time}}">{{date}}</time>
+  </li>
   {{/posts}}
 </ul>
