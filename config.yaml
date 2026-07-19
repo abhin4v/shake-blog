@@ -1,8 +1,8 @@
-title: Dum Dev Blog
-url: https://projects.abhinavsarkar.net/dum-blog
-description: The blog for the Dum programming language.
+title: My Blog
+url: https://example.com
+description: A blog about things.
 authors:
-  - name: Abhinav Sarkar
-    uri: https://abhinavsarkar.net/about/
-    email: abhinav@abhinavsarkar.net
+  - name: Your Name
+    uri: https://example.com/about/
+    email: you@example.com
     copyright_year: "2026"
