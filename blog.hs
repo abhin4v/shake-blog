@@ -36,8 +36,9 @@ import Text.Atom.Feed qualified as Atom
 import Text.Atom.Feed.Export qualified as Atom
 import Text.Mustache qualified as Mus
 import Text.Mustache.Compile qualified as Mus
-import Text.Pandoc (Block (Plain), Meta (..), MetaValue (..), Pandoc (..))
+import Text.Pandoc (Block (Plain), Inline (..), Meta (..), MetaValue (..), Pandoc (..))
 import Text.Pandoc qualified as Pandoc
+import Text.Pandoc.Walk qualified as Pandoc
 import Prelude hiding (readFile, writeFile)
 
 main :: IO ()
@@ -241,7 +242,9 @@ pageRules :: RRules ()
 pageRules =
   map indexHtmlOutputPath pagePaths |@> \target -> do
     let src = indexHtmlSourcePath target
-    (meta, html) <- markdownToHtml src
+    ctx <- ask
+    baseUrl <- getBaseUrl ctx.config
+    (meta, html) <- markdownToHtml baseUrl src
 
     mkPage (meta HM.! ("title" :: T.Text)) "page" html
       >>= applyTemplateAndWrite "default.html" target
@@ -303,10 +306,10 @@ readPost config postPath = do
       $ postPath
   let date = T.pack $ formatTime @UTCTime defaultTimeLocale "%B %e, %Y" dateTime
 
-  (meta, content) <- markdownToHtml postPath
+  baseUrl <- getBaseUrl config
+  (meta, content) <- markdownToHtml baseUrl postPath
   putInfo $ "Read " <> postPath
 
-  baseUrl <- getBaseUrl config
   return $
     Post
       { url = baseUrl <> "/" <> T.pack (Shake.dropExtension postPath) <> "/",
@@ -451,13 +454,14 @@ writeFile fp content = do
 
 -- Pandoc utils
 
-markdownToHtml :: (MonadAction m, FromJSON a) => FilePath -> m (a, T.Text)
-markdownToHtml filePath = liftAction $ do
+markdownToHtml :: (MonadAction m, FromJSON a) => T.Text -> FilePath -> m (a, T.Text)
+markdownToHtml baseUrl filePath = liftAction $ do
   content <- readFile filePath
   Shake.quietly . Shake.traced "Markdown to HTML" $ do
     pandoc@(Pandoc meta _) <- runPandoc $ Pandoc.readMarkdown readerOptions content
+    let pandoc' = rewriteLinks pandoc
+    html <- runPandoc . Pandoc.writeHtml5String writerOptions $ pandoc'
     meta' <- fromMeta meta
-    html <- runPandoc . Pandoc.writeHtml5String writerOptions $ pandoc
     return (meta', html)
   where
     readerOptions =
@@ -485,6 +489,18 @@ markdownToHtml filePath = liftAction $ do
     runPandoc action =
       Pandoc.runIO (Pandoc.setVerbosity Pandoc.ERROR >> action)
         >>= either (fail . show) return
+
+    rewriteLinks = Pandoc.walk $ \case
+      Link attr inlines (url, title) ->
+        Link attr inlines (prependBaseUrl url, title)
+      Image attr inlines (url, title) ->
+        Image attr inlines (prependBaseUrl url, title)
+      other -> other
+
+    prependBaseUrl url
+      | T.null baseUrl = url
+      | "/" `T.isPrefixOf` url = baseUrl <> url
+      | otherwise = url
 
 -- Mustache utils
 
