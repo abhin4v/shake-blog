@@ -8,9 +8,9 @@ tags:
 Run this blog on GitHub Actions and Pages: fork the repo, set the config,
 and let the Action build and publish the site for you.
 
-## Quick Start
+## Quickstart
 
-1. Fork this repository on GitHub.
+1. Fork this [repository](https://github.com/abhin4v/shake-blog) on GitHub.
 2. Edit [`config.yaml`](https://github.com/abhin4v/shake-blog/blob/main/config.yaml):
    set your site's title, URL, description, and authors.
 3. [Set up the GitHub Action](#setting-up-the-github-action).
@@ -39,7 +39,7 @@ After the first successful Action run has created the `gh-pages` branch:
 4. Wait a minute, then refresh the Pages settings page. GitHub will show
    the public URL, e.g. `https://<you>.github.io/<repo>/`.
 
-If you use a custom domain, add a `CNAME` file to the repo root containing your domain (the workflow copies it into `_site/` so it lands at the root of the `gh-pages` branch), and configure the domain under **Settings → Pages → Custom domain**. Without the `CNAME` file in the published branch, GitHub clears the custom-domain setting on every deploy.
+If you use a custom domain, add a `CNAME` file to the repo root containing your domain (the workflow copies it into `_site/` so it lands at the root of the `gh-pages` branch), and configure the domain under **Settings → Pages → Custom domain**. Without the `CNAME` file in the published branch, GitHub clears the custom-domain setting on every deploy. Update the `url` config in `config.yaml` to match your custom URL.
 
 ## Caveats
 

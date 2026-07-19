@@ -36,12 +36,12 @@ Every page gets its own directory with an `index.html`, so no `.html` extensions
 
 ```{.plain}
 _site/posts/my-first-post/index.html  ->  /posts/my-first-post/
-_site/about/index.html                ->  /about/
+_site/contact/index.html              ->  /contact/
 ```
 
-## Dark Mode Support
+## Responsive CSS with Dark Mode Support
 
-The stylesheet uses the CSS `light-dark()` function to provide support for light and dark modes.
+The blog looks good on all screen sizes due to responsive CSS. Light and dark modes are also supported using the CSS `light-dark()` function.
 
 ## Dev and Prod Modes
 
@@ -64,7 +64,7 @@ The included GitHub Actions workflow builds the site with `ENV=PROD` and publish
 
 ## Extensibility
 
-Everything lives in `blog.hs`, organized into labeled sections. Extend `blog.hs` to add any functionality you want to your website, with full Shake API available to you.
+Everything lives in `blog.hs`, organized into labeled sections. Extend `blog.hs` to add any functionality you want to your website. The full Shake API is available to you.
 
 [Shake]: https://shakebuild.com/
 [Pandoc]: https://pandoc.org/

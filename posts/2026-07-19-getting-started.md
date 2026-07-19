@@ -7,7 +7,7 @@ tags:
 
 This blog is built with [Shake Blog](https://github.com/abhin4v/shake-blog) — an unopinionated static site generator (SSG) built upon [Shake](https://shakebuild.com), a build system written in [Haskell](https://haskell.org). It is **not** a framework or a platform. It sets the bare minimum pattern for building an SSG over Shake, and expects you to learn and extend it to fit your needs.
 
-That said, even without any extension, this is a perfectly working SSG. It produces a blog with posts, standalone pages, tag archives, and an Atom feed — everything you need to get started.
+That said, even without any extension, this is a perfectly working SSG. It produces a blog with posts, standalone pages, tag archives, and an Atom feed.
 
 This post explains how it works and how to use it.
 
@@ -53,7 +53,7 @@ In a different terminal, run `python3 -m http.server -d _site` to serve the webs
 ## Project Structure
 
 ```
-├── blog.hs              # the generator — edit to customize
+├── blog.hs              # the generator, edit to customize
 ├── config.yaml          # site identity (title, url, description, authors)
 ├── contact.md           # standalone page (e.g. contact)
 ├── posts/               # markdown posts, one file per post
@@ -102,7 +102,7 @@ The build settings live at the top of `blog.hs` in the `Settings` section:
 | `homePostCount` | `5` | Number of recent posts shown on the homepage |
 | `feedFileName` | `"feed.atom"` | Name of the Atom feed file |
 
-Everything else in `blog.hs` is meant to be read and modified as your site grows — add new page types, change the URL structure, wire in new Shake rules. See [Shake Blog Features in Detail](/posts/2026-07-17-shake-blog-features/) for a tour of features.
+Everything else in `blog.hs` is meant to be read and modified as your site grows; add new page types, change the URL structure, wire in new Shake rules. See [Shake Blog Features in Detail](/posts/2026-07-17-shake-blog-features/) for a tour of features.
 
 ## Output
 
