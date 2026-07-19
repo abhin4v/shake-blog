@@ -1,8 +1,8 @@
-title: My Blog
-url: https://example.com
-description: A blog about things.
+title: My Shake Blog
+url: https://abhin4v.github.io/shake-blog/
+description: An example blog build on Shake.
 authors:
-  - name: Your Name
-    uri: https://example.com/about/
-    email: you@example.com
+  - name: Abhinav Sarkar
+    uri: https://abhinavsarkar.net/about/
+    email: abhinav@abhinavsarkar.net
     copyright_year: "2026"

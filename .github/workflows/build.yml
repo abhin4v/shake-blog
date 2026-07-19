@@ -1,0 +1,46 @@
+name: Build blog
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: install Nix
+        uses: DeterminateSystems/nix-installer-action@v22
+
+      - name: build site
+        run: ENV=PROD ./blog.hs -j4 --color --digest build
+
+      - name: check CNAME
+        run: |
+          set -euxo pipefail
+          if [ -f CNAME ] && [ ! -s CNAME ]; then
+            echo "::warning::CNAME file exists but is empty; ignoring"
+            rm CNAME
+          fi
+
+      - name: copy CNAME
+        run: |
+          set -euxo pipefail
+          [ -f CNAME ] && cp CNAME _site/CNAME || true
+
+      - name: add .nojekyll
+        run: touch _site/.nojekyll
+
+      - name: publish
+        uses: crazy-max/ghaction-github-pages@v4
+        with:
+          target_branch: gh-pages
+          build_dir: _site
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
