@@ -155,9 +155,9 @@ Post pages receive:
 
 | Variable | Description |
 |---|---|
-| `meta.title` | Post title |
-| `meta.author` | Post author (if set in front matter) |
-| `meta.tags` | List of tags |
+| `title` | Post title |
+| `author` | Post author (if set in front matter) |
+| `tags` | List of tags |
 | `date` | Formatted date (e.g. `July 17, 2026`) |
 | `date_time` | ISO-8601 date (e.g. `2026-07-17T00:00:00Z`) |
 | `content` | Post body as HTML |

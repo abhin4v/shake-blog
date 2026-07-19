@@ -183,7 +183,7 @@ buildTargets = do
 
   ctx <- ask
   posts <- forP postPaths $ getPost ctx.postCache
-  need [indexHtmlOutputPath $ tagArchivePath </> T.unpack tag | post <- posts, tag <- post.meta.tags]
+  need [indexHtmlOutputPath $ tagArchivePath </> T.unpack tag | post <- posts, tag <- post.tags]
 
 buildRules :: RRules ()
 buildRules = do
@@ -275,7 +275,9 @@ instance ToJSON PostMeta where
       ]
 
 data Post = Post
-  { meta :: PostMeta,
+  { title :: T.Text,
+    author :: Maybe T.Text,
+    tags :: [T.Text],
     date :: T.Text,
     dateTime :: UTCTime,
     content :: T.Text,
@@ -288,7 +290,9 @@ data Post = Post
 instance ToJSON Post where
   toJSON Post {..} =
     A.object
-      [ "meta" .= meta,
+      [ "title" .= title,
+        "author" .= author,
+        "tags" .= tags,
         "date" .= date,
         "date_time" .= dateTime,
         "content" .= content,
@@ -307,7 +311,7 @@ readPost config postPath = do
   let date = T.pack $ formatTime @UTCTime defaultTimeLocale "%B %e, %Y" dateTime
 
   baseUrl <- getBaseUrl config
-  (meta, content) <- markdownToHtml baseUrl postPath
+  (PostMeta {..}, content) <- markdownToHtml baseUrl postPath
   putInfo $ "Read " <> postPath
 
   return $
@@ -336,7 +340,7 @@ postRules =
     post <- getPost ctx.postCache src
     postHtml <- applyTemplate "post.html" post
 
-    mkPage post.meta.title "post" postHtml
+    mkPage post.title "post" postHtml
       >>= applyTemplateAndWrite "default.html" target
     putInfo $ "Built " <> target <> " from " <> src
 
@@ -376,7 +380,7 @@ tagArchiveRules =
   (tagArchivePath </> "*/index.html") @> \target -> do
     let tag = T.pack $ Shake.splitDirectories target !! 2
     getPosts
-      <&> filter ((tag `elem`) . tags . meta)
+      <&> filter (\post -> tag `elem` post.tags)
       >>= writeArchive (T.pack "Posts tagged “" <> tag <> T.pack "”") target
 
 homeRules :: RRules ()
@@ -546,19 +550,19 @@ feedAuthor AuthorConfig {..} =
     }
 
 mkPostEntry :: Post -> RAction Atom.Entry
-mkPostEntry post@Post {meta} = do
+mkPostEntry post@Post {..} = do
   let siteUrl = post.config.url
       authors = post.config.authors
       entryUrl = if siteUrl `T.isPrefixOf` post.url then post.url else siteUrl <> post.url
       entryUpdated = T.pack $ formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%SZ" post.dateTime
-      entryAuthor = fromMaybe (head authors) $ meta.author >>= \n -> find ((== n) . name) authors
+      entryAuthor = fromMaybe (head authors) $ author >>= \n -> find ((== n) . name) authors
   return $
     Atom.Entry
       { entryId = entryUrl,
-        entryTitle = Atom.TextString meta.title,
+        entryTitle = Atom.TextString title,
         entryUpdated = entryUpdated,
         entryAuthors = [feedAuthor entryAuthor],
-        entryCategories = map (Atom.newCategory . T.strip) meta.tags,
+        entryCategories = map (Atom.newCategory . T.strip) tags,
         entryContent = Just $ Atom.HTMLContent post.content,
         entryContributor = [],
         entryLinks = [(Atom.nullLink entryUrl) {Atom.linkRel = Just $ Left "alternate"}],

@@ -1,14 +1,14 @@
-<h1>{{meta.title}}</h1>
+<h1>{{title}}</h1>
 
 <div class="post-info">
   <p>
     Posted on <time datetime="{{date_time}}">{{date}}</time>
-    {{#meta.author}} by {{meta.author}} {{/meta.author}}
+    {{#author}} by {{author}} {{/author}}
   </p>
   <ul class="tags">
-    {{#meta.tags}}
+    {{#tags}}
     <li><a href="{{base_url}}/tags/{{.}}/">{{.}}</a></li>
-    {{/meta.tags}}
+    {{/tags}}
   </ul>
 </div>
 {{{content}}}
