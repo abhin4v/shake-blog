@@ -65,7 +65,7 @@ outputDir :: FilePath
 outputDir = "_site"
 
 assetGlobs :: [Shake.FilePattern]
-assetGlobs = ["css/*.css", "images/*.png"]
+assetGlobs = ["css/*.css", "images/*.png", "images/*.svg", "images/*.jpg"]
 
 pagePaths :: [FilePath]
 pagePaths = ["contact.md"]

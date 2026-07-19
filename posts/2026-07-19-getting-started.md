@@ -44,7 +44,7 @@ Run `./blog.hs --help` to see all Shake build options (parallelism, progress rep
 For automatic rebuilds on file changes, use [`entr`](https://github.com/eradman/entr):
 
 ```sh
-brew install entr                          # macOS
+brew install entr  # macOS
 git ls-files | entr -c ./blog.hs build
 ```
 
@@ -52,23 +52,7 @@ In a different terminal, run `python3 -m http.server -d _site` to serve the webs
 
 ## Project Structure
 
-```
-├── blog.hs              # the generator, edit to customize
-├── config.yaml          # site identity (title, url, description, authors)
-├── contact.md           # standalone page (e.g. contact)
-├── posts/               # markdown posts, one file per post
-│   └── YYYY-MM-DD-*.md
-├── templates/           # mustache templates
-│   ├── default.html     # outer page layout
-│   ├── home.html        # homepage
-│   ├── post.html        # individual post
-│   ├── archive.html     # post archive
-│   ├── post-list.html   # shared post list partial
-│   └── feed.svg         # feed icon partial
-├── css/                 # static assets (copied verbatim)
-│   └── default.css
-└── _site/               # build output
-```
+![](/images/project-structure.svg)
 
 ## Configuration
 
@@ -94,7 +78,7 @@ The build settings live at the top of `blog.hs` in the `Settings` section:
 | Setting | Default | Description |
 |---|---|---|
 | `outputDir` | `"_site"` | Where the generated site goes |
-| `assetGlobs` | `["css/*.css", "images/*.png"]` | Patterns for static files to copy verbatim |
+| `assetGlobs` | `["css/*.css", "images/*.png", "images/*.svg", "images/*.jpg"]` | Patterns for static files to copy verbatim |
 | `postGlobs` | `["posts/*.md"]` | Glob pattern for finding post source files |
 | `pagePaths` | `["contact.md"]` | List of standalone Markdown page sources (e.g. `["about.md", "contact.md"]`) |
 | `archivePath` | `"archive"` | Subdirectory for the post archive |
@@ -109,25 +93,7 @@ Everything else in `blog.hs` is meant to be read and modified as your site grows
 Running `./blog.hs build` produces this site structure under the output
 directory (`_site` by default):
 
-```
-_site/
-├── index.html                  # homepage
-├── feed.atom                   # Atom feed
-├── contact/
-│   └── index.html              # standalone page (if `contact.md` in pagePaths)
-├── css/
-│   └── default.css             # copied verbatim from source
-├── images/
-│   └── ...                     # copied verbatim from source
-├── archive/
-│   └── index.html              # full post archive
-├── tags/
-│   ├── <tag>/
-│   │   └── index.html          # per-tag post listing
-│   └── ...
-└── <post-slug>/
-    └── index.html              # individual post
-```
+![](/images/output-structure.svg)
 
 Each post and standalone page gets its own directory with an `index.html` so
 URLs are clean (e.g. `/my-first-post/` or `/contact/`).

@@ -305,6 +305,12 @@ iframe {
   margin: 1em auto;
 }
 
+@media (prefers-color-scheme: dark) {
+  img[src*=".svg"] {
+    filter: invert(80%) hue-rotate(180deg);
+  }
+}
+
 /* Horizontal rule */
 hr {
   border: none;
