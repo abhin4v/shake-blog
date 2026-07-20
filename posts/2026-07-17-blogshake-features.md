@@ -1,18 +1,18 @@
 ---
-title: Shake Blog Features in Detail
+title: BlogShake Features in Detail
 tags:
   - shake
   - guide
 author: Abhinav Sarkar
 ---
 
-Most static site generators are applications with conventions and plugins. They work well until you need something they didn't anticipate. Shake Blog takes a different approach: a working [Shake] build script that you are meant to read and modify. This post covers its main features. For getting started, see [Getting Started with Shake Blog](/posts/2026-07-19-getting-started/).
+Most static site generators are applications with conventions and plugins. They work well until you need something they didn't anticipate. BlogShake takes a different approach: a working [Shake] build script that you are meant to read and modify. This post covers its main features. For getting started, see [Getting Started with BlogShake](/posts/2026-07-19-getting-started/).
 
 ## Build System Approach
 
 [Shake] is a build system written in [Haskell](https://haskell.org). It can be used to build anything, in this case we use it to build a website. Building on Shake gives us parallelism, incremental rebuilds, caching, profiling, and detailed error messages for free[^existing].
 
-[^existing]: See [Slick](https://github.com/ChrisPenner/slick) and [Rib](https://github.com/srid/rib) for other Shake-based SSGs. Shake Blog differs by exposing Shake directly rather than hiding it behind a framework.
+[^existing]: See [Slick](https://github.com/ChrisPenner/slick) and [Rib](https://github.com/srid/rib) for other Shake-based SSGs. BlogShake differs by exposing Shake directly rather than hiding it behind a framework.
 
 ## Zero-Setup Dependencies
 

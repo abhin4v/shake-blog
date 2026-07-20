@@ -2,13 +2,25 @@
 
 <p>Welcome to the {{site.title}}!</p>
 
-<p><a href="https://github.com/abhin4v/shake-blog">Shake Blog</a> is a starter project for building your own static site generator using <a href="https://shakebuild.com">Shake</a> and <a href="https://haskell.org">Haskell</a>. It produces a blog with posts, standalone pages, tag archives, and an Atom feed of posts.</p>
+<p>
+  <a href="https://github.com/abhin4v/shake-blog">BlogShake</a> is a starter
+  project for building your own static site generator using
+  <a href="https://shakebuild.com">Shake</a> and
+  <a href="https://haskell.org">Haskell</a>. It produces a blog with posts,
+  standalone pages, tag archives, and an Atom feed of posts.
+</p>
 
-<p>It is <b>not</b> a turnkey blogging platform. You are expected to fork the codebase and modify it as your site grows — tweak the templates, add new page types, change the URL structure, wire in new build rules.</p>
+<p>
+  It is <b>not</b> a turnkey blogging platform. You are expected to fork the
+  codebase and modify it as your site grows — tweak the templates, add new page
+  types, change the URL structure, wire in new build rules.
+</p>
 
 <p>See the posts below for detailed usage instructions.</p>
 
 <a href="{{base_url}}/feed.atom" class="feed-icon">{{> templates/feed.svg }}</a>
 <h2>Recent Posts</h2>
 {{> templates/post-list.html }}
-<p>You can find all posts in the <a href="{{base_url}}/archive/">archives</a>.</p>
+<p>
+  You can find all posts in the <a href="{{base_url}}/archive/">archives</a>.
+</p>

@@ -1,11 +1,11 @@
 ---
-title: Hosting Shake Blog on GitHub Pages
+title: Hosting BlogShake on GitHub Pages
 tags:
   - guide
   - github-pages
 ---
 
-Run this blog on GitHub Actions and Pages: fork the repo, set the config,
+Run a BlogShake blog on GitHub Actions and Pages: fork the repo, set the config,
 and let the Action build and publish the site for you.
 
 ## Quickstart
