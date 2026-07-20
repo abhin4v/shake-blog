@@ -2,19 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="language" content="EN">
+    <meta name="language" content="EN" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>{{site.title}} — {{title}}</title>
     <meta name="description" content="{{site.description}}" />
     <meta name="author" content="{{site.author.name}}" />
     <meta name="copyright" content="{{site.author.name}} {{site.author.copyright_year}}" />
-    <meta name="robots" content="noindex, nofollow" />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:url" content="{{base_url}}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{{site.title}} — {{title}}" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="{{site.title}}" />
+    <meta property="og:description" content="{{site.description}}" />
 
     <link rel="stylesheet" type="text/css" href="{{base_url}}/css/default.css" />
-    <link rel="me" href="{{site.author.uri}}" type="text/html">
-    <link rel="author" href="{{site.author.uri}}" type="text/html">
-    <link rel="alternate" type="application/atom+xml" title="Feed" href="{{base_url}}/feed.atom">
+    <link rel="me" href="{{site.author.uri}}" type="text/html" />
+    <link rel="author" href="{{site.author.uri}}" type="text/html" />
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="{{base_url}}/feed.atom" />
   </head>
   <body>
     <header>
