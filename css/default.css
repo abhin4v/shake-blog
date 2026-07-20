@@ -7,17 +7,17 @@ Enhanced with light-dark() support for automatic dark mode and blog specific CSS
 :root {
   color-scheme: light dark;
   background-color: light-dark(#ffffff, #1a1a2e);
-  --bg: light-dark(#ffffff, #1a1a2e);
-  --text: light-dark(#1e1e1e, #e4e4e7);
-  --heading: light-dark(#111111, #f4f4f5);
-  --border: light-dark(#ccc, #3f3f46);
-  --link: light-dark(#0066cc, #60a5fa);
-  --code-bg: light-dark(#f8f8f8, #212121);
-  --code-text: light-dark(#333333, #cfcfc2);
-  --blockquote-text: light-dark(#666, #a1a1aa);
-  --th-bg: light-dark(#eee, #27272a);
-  --th-text: light-dark(#111, #f4f4f5);
-  --tag-border: light-dark(burlywood, #a16207);
+  --bg-color: light-dark(#ffffff, #1a1a2e);
+  --text-color: light-dark(#1e1e1e, #e4e4e7);
+  --heading-color: light-dark(#111111, #f4f4f5);
+  --border-color: light-dark(#ccc, #3f3f46);
+  --link-color: light-dark(#0066cc, #60a5fa);
+  --code-bg-color: light-dark(#f8f8f8, #212121);
+  --code-text-color: light-dark(#333333, #cfcfc2);
+  --blockquote-color: light-dark(#666, #a1a1aa);
+  --th-bg-color: light-dark(#eee, #27272a);
+  --th-text-color: light-dark(#111, #f4f4f5);
+  --tag-border-color: light-dark(burlywood, #a16207);
 
   /* syntax highlighting: colors */
   --code-al-color: light-dark(#ef2929, #95da4c);
@@ -81,8 +81,8 @@ Enhanced with light-dark() support for automatic dark mode and blog specific CSS
 
 /* Base body styles */
 body {
-  background-color: var(--bg);
-  color: var(--text);
+  background-color: var(--bg-color);
+  color: var(--text-color);
   font-family: sans-serif;
   font-size: 18px;
   line-height: 1.6;
@@ -102,18 +102,18 @@ h3,
 h4,
 h5,
 h6 {
-  color: var(--heading);
+  color: var(--heading-color);
   margin-top: 1em;
 }
 
 h1 {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.3em;
 }
 
 /* Links */
 a {
-  color: var(--link);
+  color: var(--link-color);
   text-decoration: none;
 }
 a:hover {
@@ -126,8 +126,8 @@ a:hover {
 /* Code blocks and inline code */
 pre,
 code {
-  background-color: var(--code-bg);
-  color: var(--code-text);
+  background-color: var(--code-bg-color);
+  color: var(--code-text-color);
   border-radius: 4px;
   font-family: monospace;
 }
@@ -254,10 +254,10 @@ code span.wa {
 
 /* Blockquotes */
 blockquote {
-  border-left: 4px solid var(--border);
+  border-left: 4px solid var(--border-color);
   margin: 1em 0;
   padding-left: 1em;
-  color: var(--blockquote-text);
+  color: var(--blockquote-color);
   font-style: italic;
 }
 
@@ -284,15 +284,15 @@ table {
 table,
 th,
 td {
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-color);
 }
 th,
 td {
   padding: 0.5em;
 }
 th {
-  background: var(--th-bg);
-  color: var(--th-text);
+  background: var(--th-bg-color);
+  color: var(--th-text-color);
 }
 
 /* Media (images, videos, iframes) */
@@ -314,7 +314,7 @@ iframe {
 /* Horizontal rule */
 hr {
   border: none;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-color);
 }
 
 /* Paragraph spacing */
@@ -342,7 +342,7 @@ nav {
 }
 
 footer {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-color);
   padding: 0.25em;
   text-align: center;
   font-size: smaller;
@@ -351,7 +351,7 @@ footer {
 .post-info {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-color);
   padding-block-end: 1em;
 }
 
@@ -372,7 +372,7 @@ ul.tags {
 
 ul.tags li {
   display: inline-block;
-  border: 1px solid var(--tag-border);
+  border: 1px solid var(--tag-border-color);
   border-radius: 5px;
   padding: 0 5px;
 }
