@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="language" content="EN" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>BlogShake — Markdown Demo</title>
+    <meta name="description" content="An example blog build on Shake." />
+    <meta name="author" content="Abhinav Sarkar" />
+    <meta name="copyright" content="Abhinav Sarkar 2026" />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:url" content="https://abhin4v.github.io/shake-blog" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="BlogShake — Markdown Demo" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="BlogShake" />
+    <meta property="og:description" content="An example blog build on Shake." />
+
+    <link rel="stylesheet" type="text/css" href="https://abhin4v.github.io/shake-blog/css/default.css" />
+    <link rel="me" href="https://abhinavsarkar.net/about/" type="text/html" />
+    <link rel="author" href="https://abhinavsarkar.net/about/" type="text/html" />
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://abhin4v.github.io/shake-blog/feed.atom" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="https://abhin4v.github.io/shake-blog/" style="font-weight: bold">BlogShake</a>
+        <a href="https://abhin4v.github.io/shake-blog/archive/">Archive</a>
+        <a href="https://abhin4v.github.io/shake-blog/contact/">Contact</a>
+      </nav>
+    </header>
+    <main class="post">
+      <h1>Markdown Demo</h1>
+
+<div class="post-info">
+  <p>
+    Posted on <time datetime="2026-07-16T00:00:00Z">July 16, 2026</time>
+    
+  </p>
+  <ul class="tags">
+    <li><a href="https://abhin4v.github.io/shake-blog/tags/demo/">demo</a></li>
+    <li><a href="https://abhin4v.github.io/shake-blog/tags/markdown/">markdown</a></li>
+  </ul>
+</div>
+<p>It’s very easy to make some words <strong>bold</strong> and other
+words <em>italic</em> with Markdown. You can even <a
+href="http://google.com">link to Google!</a>.</p>
+<h1 id="this-is-an-h1-tag">This is an h1 tag</h1>
+<h2 id="this-is-an-h2-tag">This is an h2 tag</h2>
+<h3 id="this-is-an-h3-tag">This is an h3 tag</h3>
+<h4 id="this-is-an-h4-tag">This is an h4 tag</h4>
+<h5 id="this-is-an-h5-tag">This is an h5 tag</h5>
+<h6 id="this-is-an-h6-tag">This is an h6 tag</h6>
+<p><em>This text will be italic</em></p>
+<p><em>This will also be italic</em></p>
+<p><strong>This text will be bold</strong></p>
+<p><strong>This will also be bold</strong></p>
+<p><em>You <strong>can</strong> combine them</em></p>
+<ul>
+<li>Item 1</li>
+<li>Item 2
+<ul>
+<li>Item 2a</li>
+<li>Item 2b</li>
+</ul></li>
+</ul>
+<ol type="1">
+<li>Item 1</li>
+<li>Item 2</li>
+<li>Item 3
+<ol type="1">
+<li>Item 3a</li>
+<li>Item 3b</li>
+</ol></li>
+</ol>
+<p>As Kanye West said:</p>
+<blockquote>
+<p>We’re living the future so the present is our past.</p>
+</blockquote>
+<p>I think you should use an <code>&lt;code&gt;</code> element here
+instead.</p>
+<p>And this is a horizontal rule.</p>
+<hr />
+<h2 id="code">Code</h2>
+<p>There are many different ways to style code with Pandoc’s markdown.
+If you have inline code blocks, wrap them in backticks: <code
+class="sourceCode javascript js"><span class="kw">var</span> example <span class="op">=</span> <span class="kw">true</span></code>.
+You can also add a block of code:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">fancyAlert</span>(arg) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(arg) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    $<span class="op">.</span><span class="fu">facebox</span>({<span class="dt">div</span><span class="op">:</span><span class="st">&#39;#foo&#39;</span>})</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="task-lists">Task Lists</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="" />this is a complete
+item</label></li>
+<li><label><input type="checkbox" />this is an incomplete
+item</label></li>
+</ul>
+<h2 id="tables">Tables</h2>
+<p>You can create tables by assembling a list of words and dividing them
+with hyphens <code>-</code> (for the first row), and then separating
+each column with a pipe <code>|</code>:</p>
+<table>
+<thead>
+<tr>
+<th>First Header</th>
+<th>Second Header</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Content from cell 1</td>
+<td>Content from cell 2</td>
+</tr>
+<tr>
+<td>Content in the first column</td>
+<td>Content in the second column</td>
+</tr>
+</tbody>
+</table>
+
+    </main>
+    <footer>
+      Built with <a href="https://shakebuild.com">Shake</a> and
+      <a href="https://haskell.org">Haskell</a>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="language" content="EN" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>BlogShake — BlogShake Features in Detail</title>
+    <meta name="description" content="An example blog build on Shake." />
+    <meta name="author" content="Abhinav Sarkar" />
+    <meta name="copyright" content="Abhinav Sarkar 2026" />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:url" content="https://abhin4v.github.io/shake-blog" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="BlogShake — BlogShake Features in Detail" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="BlogShake" />
+    <meta property="og:description" content="An example blog build on Shake." />
+
+    <link rel="stylesheet" type="text/css" href="https://abhin4v.github.io/shake-blog/css/default.css" />
+    <link rel="me" href="https://abhinavsarkar.net/about/" type="text/html" />
+    <link rel="author" href="https://abhinavsarkar.net/about/" type="text/html" />
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://abhin4v.github.io/shake-blog/feed.atom" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="https://abhin4v.github.io/shake-blog/" style="font-weight: bold">BlogShake</a>
+        <a href="https://abhin4v.github.io/shake-blog/archive/">Archive</a>
+        <a href="https://abhin4v.github.io/shake-blog/contact/">Contact</a>
+      </nav>
+    </header>
+    <main class="post">
+      <h1>BlogShake Features in Detail</h1>
+
+<div class="post-info">
+  <p>
+    Posted on <time datetime="2026-07-17T00:00:00Z">July 17, 2026</time>
+     by Abhinav Sarkar 
+  </p>
+  <ul class="tags">
+    <li><a href="https://abhin4v.github.io/shake-blog/tags/shake/">shake</a></li>
+    <li><a href="https://abhin4v.github.io/shake-blog/tags/guide/">guide</a></li>
+  </ul>
+</div>
+<p>Most static site generators are applications with conventions and
+plugins. They work well until you need something they didn’t anticipate.
+BlogShake takes a different approach: a working <a
+href="https://shakebuild.com/">Shake</a> build script that you are meant
+to read and modify. This post covers its main features. For getting
+started, see <a
+href="https://abhin4v.github.io/shake-blog/posts/2026-07-19-getting-started/">Getting
+Started with BlogShake</a>.</p>
+<h2 id="build-system-approach">Build System Approach</h2>
+<p><a href="https://shakebuild.com/">Shake</a> is a build system written
+in <a href="https://haskell.org">Haskell</a>. It can be used to build
+anything, in this case we use it to build a website. Building on Shake
+gives us parallelism, incremental rebuilds, caching, profiling, and
+detailed error messages for free<a href="#fn1" class="footnote-ref"
+id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<h2 id="zero-setup-dependencies">Zero-Setup Dependencies</h2>
+<p>All dependencies are managed by <a href="https://nixos.org/">Nix</a>.
+No compilation is needed to run the generator.</p>
+<h2 id="pandoc-based-rendering">Pandoc-Based Rendering</h2>
+<p>Posts are Markdown files with YAML front matter. We get <a
+href="https://pandoc.org/">Pandoc</a>’s full Markdown support:
+footnotes, definition lists, tables, math, syntax highlighting.</p>
+<p>Alongside posts, standalone pages (about, contact, etc.) can be added
+via the <code>pagePaths</code> setting. They work the same way but skip
+dates and tags.</p>
+<p>The site configuration supports multiple author profiles with name,
+URI, email, and copyright year. Posts can override the default author
+via front matter, and the Atom feed resolves each post to the matching
+author’s full profile for proper attribution.</p>
+<h3 id="code-highlighting">Code Highlighting</h3>
+<p>Code blocks are highlighted by Pandoc using CSS classes. The default
+stylesheet provides syntax highlighting colors for code tokens. It uses
+the <code>light-dark()</code> function so that highlighting adapts to
+light and dark modes automatically.</p>
+<h2 id="clean-urls">Clean URLs</h2>
+<p>Every page gets its own directory with an <code>index.html</code>, so
+no <code>.html</code> extensions:</p>
+<pre class="plain"><code>_site/posts/my-first-post/index.html  -&gt;  /posts/my-first-post/
+_site/contact/index.html              -&gt;  /contact/</code></pre>
+<h2 id="responsive-css-with-dark-mode-support">Responsive CSS with Dark
+Mode Support</h2>
+<p>The blog looks good on all screen sizes due to responsive CSS. Light
+and dark modes are also supported using the CSS
+<code>light-dark()</code> function.</p>
+<h2 id="dev-and-prod-modes">Dev and Prod Modes</h2>
+<p>Set <code>ENV=PROD</code> for absolute URLs, unset for relative:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./blog.hs</span> build              <span class="co"># relative URLs, open locally</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">ENV</span><span class="op">=</span>PROD <span class="ex">./blog.hs</span> build     <span class="co"># absolute URLs, deploy</span></span></code></pre></div>
+<p>Only the <code>base_url</code> variable changes between modes.
+Content and structure are identical.</p>
+<h2 id="atom-feed-archives-and-tags">Atom Feed, Archives, and Tags</h2>
+<p>The generator produces an Atom feed at <code>/feed.atom</code>, a
+reverse-chronological archive at <code>/archive/</code>, and per-tag
+pages at <code>/tags/&lt;tag&gt;/</code>.</p>
+<h2 id="cicd">CI/CD</h2>
+<p>The included GitHub Actions workflow builds the site with
+<code>ENV=PROD</code> and publishes to GitHub Pages on every push. See
+the <a
+href="https://abhin4v.github.io/shake-blog/posts/2026-07-18-hosting-on-github-pages/">hosting
+guide</a> for setup.</p>
+<h2 id="extensibility">Extensibility</h2>
+<p>Everything lives in <code>blog.hs</code>, organized into labeled
+sections. Extend <code>blog.hs</code> to add any functionality you want
+to your website. The full Shake API is available to you.</p>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>See <a
+href="https://github.com/ChrisPenner/slick">Slick</a> and <a
+href="https://github.com/srid/rib">Rib</a> for other Shake-based SSGs.
+BlogShake differs by exposing Shake directly rather than hiding it
+behind a framework.<a href="#fnref1" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+    </main>
+    <footer>
+      Built with <a href="https://shakebuild.com">Shake</a> and
+      <a href="https://haskell.org">Haskell</a>
+    </footer>
+  </body>
+</html>

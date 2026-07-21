@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="language" content="EN" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>BlogShake — Getting Started with BlogShake</title>
+    <meta name="description" content="An example blog build on Shake." />
+    <meta name="author" content="Abhinav Sarkar" />
+    <meta name="copyright" content="Abhinav Sarkar 2026" />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:url" content="https://abhin4v.github.io/shake-blog" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="BlogShake — Getting Started with BlogShake" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="BlogShake" />
+    <meta property="og:description" content="An example blog build on Shake." />
+
+    <link rel="stylesheet" type="text/css" href="https://abhin4v.github.io/shake-blog/css/default.css" />
+    <link rel="me" href="https://abhinavsarkar.net/about/" type="text/html" />
+    <link rel="author" href="https://abhinavsarkar.net/about/" type="text/html" />
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://abhin4v.github.io/shake-blog/feed.atom" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="https://abhin4v.github.io/shake-blog/" style="font-weight: bold">BlogShake</a>
+        <a href="https://abhin4v.github.io/shake-blog/archive/">Archive</a>
+        <a href="https://abhin4v.github.io/shake-blog/contact/">Contact</a>
+      </nav>
+    </header>
+    <main class="post">
+      <h1>Getting Started with BlogShake</h1>
+
+<div class="post-info">
+  <p>
+    Posted on <time datetime="2026-07-19T00:00:00Z">July 19, 2026</time>
+    
+  </p>
+  <ul class="tags">
+    <li><a href="https://abhin4v.github.io/shake-blog/tags/guide/">guide</a></li>
+    <li><a href="https://abhin4v.github.io/shake-blog/tags/shake/">shake</a></li>
+  </ul>
+</div>
+<p>This blog is built with <a
+href="https://github.com/abhin4v/shake-blog">BlogShake</a> — an
+unopinionated static site generator (SSG) built upon <a
+href="https://shakebuild.com">Shake</a>, a build system written in <a
+href="https://haskell.org">Haskell</a>. It is <strong>not</strong> a
+framework or a platform. It sets the bare minimum pattern for building
+an SSG over Shake, and expects you to learn and extend it to fit your
+needs.</p>
+<p>That said, even without any extension, this is a perfectly working
+SSG. It produces a blog with posts, standalone pages, tag archives, and
+an Atom feed.</p>
+<p>This post explains how it works and how to use it.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>BlogShake uses <a href="https://nixos.org/">Nix</a> to download the
+dependencies.</p>
+<h2 id="quickstart">Quickstart</h2>
+<p>Run:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./blog.hs</span> build</span></code></pre></div>
+<p>The site is generated in the <code>_site</code> directory. You can
+run <code>python3 -m http.server -d _site</code> to start an HTTP
+server, and browse your website.</p>
+<p>To enable parallel builds:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./blog.hs</span> build <span class="at">-j4</span></span></code></pre></div>
+<p>Clean the output:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./blog.hs</span> clean</span></code></pre></div>
+<p>Run <code>./blog.hs --help</code> to see all Shake build options
+(parallelism, progress reporting, profile, etc.).</p>
+<h3 id="continuous-build">Continuous Build</h3>
+<p>For automatic rebuilds on file changes, use <a
+href="https://github.com/eradman/entr"><code>entr</code></a>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install entr  <span class="co"># macOS</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> ls-files <span class="kw">|</span> <span class="ex">entr</span> <span class="at">-c</span> ./blog.hs build</span></code></pre></div>
+<p>In a different terminal, run
+<code>python3 -m http.server -d _site</code> to serve the website.</p>
+<h2 id="project-structure">Project Structure</h2>
+<p><img
+src="https://abhin4v.github.io/shake-blog/images/project-structure.svg" /></p>
+<h2 id="configuration">Configuration</h2>
+<p>Edit <code>config.yaml</code> to set your blog’s title, URL,
+description, and authors:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">title</span><span class="kw">:</span><span class="at"> My Blog</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">url</span><span class="kw">:</span><span class="at"> https://example.com</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> A blog about things.</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">authors</span><span class="kw">:</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Your Name</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">uri</span><span class="kw">:</span><span class="at"> https://example.com/about/</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">email</span><span class="kw">:</span><span class="at"> you@example.com</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">copyright_year</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;2026&quot;</span></span></code></pre></div>
+<p>The generator requires at least one author.</p>
+<h2 id="customizing-the-generator">Customizing the Generator</h2>
+<p>The build settings live at the top of <code>blog.hs</code> in the
+<code>Settings</code> section:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>outputDir</code></td>
+<td><code>"_site"</code></td>
+<td>Where the generated site goes</td>
+</tr>
+<tr>
+<td><code>assetGlobs</code></td>
+<td><code>["css/*.css", "images/*.png", "images/*.svg", "images/*.jpg"]</code></td>
+<td>Patterns for static files to copy verbatim</td>
+</tr>
+<tr>
+<td><code>postGlobs</code></td>
+<td><code>["posts/*.md"]</code></td>
+<td>Glob pattern for finding post source files</td>
+</tr>
+<tr>
+<td><code>pagePaths</code></td>
+<td><code>["contact.md"]</code></td>
+<td>List of standalone Markdown page sources
+(e.g. <code>["about.md", "contact.md"]</code>)</td>
+</tr>
+<tr>
+<td><code>archivePath</code></td>
+<td><code>"archive"</code></td>
+<td>Subdirectory for the post archive</td>
+</tr>
+<tr>
+<td><code>tagArchivePath</code></td>
+<td><code>"tags"</code></td>
+<td>Subdirectory for per-tag post listings</td>
+</tr>
+<tr>
+<td><code>homePostCount</code></td>
+<td><code>5</code></td>
+<td>Number of recent posts shown on the homepage</td>
+</tr>
+<tr>
+<td><code>feedFileName</code></td>
+<td><code>"feed.atom"</code></td>
+<td>Name of the Atom feed file</td>
+</tr>
+</tbody>
+</table>
+<p>Everything else in <code>blog.hs</code> is meant to be read and
+modified as your site grows; add new page types, change the URL
+structure, wire in new Shake rules. See <a
+href="https://abhin4v.github.io/shake-blog/posts/2026-07-17-blogshake-features/">BlogShake
+Features in Detail</a> for a tour of features.</p>
+<h2 id="output">Output</h2>
+<p>Running <code>./blog.hs build</code> produces this site structure
+under the output directory (<code>_site</code> by default):</p>
+<p><img
+src="https://abhin4v.github.io/shake-blog/images/output-structure.svg" /></p>
+<p>Each post and standalone page gets its own directory with an
+<code>index.html</code> so URLs are clean
+(e.g. <code>/my-first-post/</code> or <code>/contact/</code>).</p>
+<h2 id="writing-posts">Writing Posts</h2>
+<p>Posts live in <code>posts/</code> as Markdown files with YAML front
+matter. The filename <strong>must</strong> start with
+<code>YYYY-MM-DD-</code>.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> My first post</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="an">author:</span><span class="co"> Your Name          # optional; defaults to the first author in config</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="an">tags:</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">  - haskell</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">  - shake</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>Post content goes here.</span></code></pre></div>
+<h2 id="template-variables">Template Variables</h2>
+<p>Post pages receive:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>title</code></td>
+<td>Post title</td>
+</tr>
+<tr>
+<td><code>author</code></td>
+<td>Post author (if set in front matter)</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>List of tags</td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td>Formatted date (e.g. <code>July 17, 2026</code>)</td>
+</tr>
+<tr>
+<td><code>date_time</code></td>
+<td>ISO-8601 date (e.g. <code>2026-07-17T00:00:00Z</code>)</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>Post body as HTML</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td>Absolute URL of the post</td>
+</tr>
+<tr>
+<td><code>base_url</code></td>
+<td>Site base URL (empty in dev, <code>config.url</code> in prod)</td>
+</tr>
+<tr>
+<td><code>site</code></td>
+<td>Full site config object</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>site</code> object exposes <code>site.title</code>,
+<code>site.url</code>, <code>site.description</code>,
+<code>site.author</code> (first author), and <code>site.authors</code>
+(all authors) variables.</p>
+<p>Page (non-post) templates receive <code>site</code>,
+<code>base_url</code>, <code>title</code>, <code>main_class</code>, and
+<code>content</code> variables.</p>
+<p><code>main_class</code> is a CSS class name set per-page by the
+generator (e.g. <code>"post"</code>, <code>"page"</code>,
+<code>"home"</code>, <code>"archive"</code>). It is set on
+<code>&lt;main&gt;</code> in the default template, letting you style
+different page types differently without extra template logic.</p>
+<h2 id="environment-and-base_url">Environment and
+<code>base_url</code></h2>
+<p>Set <code>ENV=PROD</code> when building for deployment:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="va">ENV</span><span class="op">=</span>PROD <span class="ex">./blog.hs</span> build</span></code></pre></div>
+<p>In <code>PROD</code> mode, <code>base_url</code> is set to the
+<code>url</code> from <code>config.yaml</code>, so all links point to
+your live site. When <code>ENV</code> is unset or set to anything else
+(e.g. the default <code>DEV</code>), <code>base_url</code> is empty and
+links are relative. This means you can preview the site locally, and the
+same build produces absolute URLs when deployed.</p>
+<h2 id="hosting-on-github-pages">Hosting on GitHub Pages</h2>
+<p>See the post on <a
+href="https://abhin4v.github.io/shake-blog/posts/2026-07-18-hosting-on-github-pages/">hosting
+on GitHub Pages</a> for instructions on deploying the blog with GitHub
+Actions and Pages.</p>
+
+    </main>
+    <footer>
+      Built with <a href="https://shakebuild.com">Shake</a> and
+      <a href="https://haskell.org">Haskell</a>
+    </footer>
+  </body>
+</html>

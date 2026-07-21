@@ -1,0 +1,404 @@
+/** MIT License Copyright (c) 2024 MingFei2001
+https://github.com/MingFei2001/pandoc-css/blob/main/themes/basic/light.css
+
+Enhanced with light-dark() support for automatic dark mode and blog specific CSS.
+**/
+
+:root {
+  color-scheme: light dark;
+  background-color: light-dark(#ffffff, #1a1a2e);
+  --bg-color: light-dark(#ffffff, #1a1a2e);
+  --text-color: light-dark(#1e1e1e, #e4e4e7);
+  --heading-color: light-dark(#111111, #f4f4f5);
+  --border-color: light-dark(#ccc, #3f3f46);
+  --link-color: light-dark(#0066cc, #60a5fa);
+  --code-bg-color: light-dark(#f8f8f8, #212121);
+  --code-text-color: light-dark(#333333, #cfcfc2);
+  --blockquote-color: light-dark(#666, #a1a1aa);
+  --th-bg-color: light-dark(#eee, #27272a);
+  --th-text-color: light-dark(#111, #f4f4f5);
+  --tag-border-color: light-dark(burlywood, #a16207);
+
+  /* syntax highlighting: colors */
+  --code-al-color: light-dark(#ef2929, #95da4c);
+  --code-an-color: light-dark(#8f5902, #3f8058);
+  --code-at-color: light-dark(#c4a000, #98c379);
+  --code-bn-color: light-dark(#0000cf, #d19a66);
+  --code-bu-color: light-dark(#333333, #e6c07b);
+  --code-cf-color: light-dark(#204a87, #c678dd);
+  --code-ch-color: light-dark(#4e9a06, #56b6c2);
+  --code-cn-color: light-dark(#000000, #61aeee);
+  --code-co-color: light-dark(#8f5902, #da8803);
+  --code-cv-color: light-dark(#8f5902, #c678dd);
+  --code-do-color: light-dark(#8f5902, #5c6370);
+  --code-dt-color: light-dark(#204a87, #e6c07b);
+  --code-dv-color: light-dark(#0000cf, #d19a66);
+  --code-er-color: light-dark(#a40000, #da4453);
+  --code-ex-color: light-dark(#333333, #0099ff);
+  --code-fl-color: light-dark(#0000cf, #d19a66);
+  --code-fu-color: light-dark(#000000, #e06c75);
+  --code-im-color: light-dark(#333333, #27ae60);
+  --code-in-color: light-dark(#8f5902, #c45b00);
+  --code-kw-color: light-dark(#204a87, #c678dd);
+  --code-op-color: light-dark(#ce5c00, #c678dd);
+  --code-ot-color: light-dark(#8f5902, #27ae60);
+  --code-pp-color: light-dark(#8f5902, #27ae60);
+  --code-re-color: light-dark(#333333, #e06c75);
+  --code-sc-color: light-dark(#000000, #61aeee);
+  --code-ss-color: light-dark(#4e9a06, #98c379);
+  --code-st-color: light-dark(#4e9a06, #98c379);
+  --code-va-color: light-dark(#000000, #d19a66);
+  --code-vs-color: light-dark(#4e9a06, #56b6c2);
+  --code-wa-color: light-dark(#8f5902, #da4453);
+
+  /* syntax highlighting: background colors */
+  --code-al-bgcolor: light-dark(transparent, #4d1f24);
+  --code-re-bgcolor: light-dark(transparent, #153042);
+
+  /* syntax highlighting: font weights */
+  --code-al-fw: light-dark(normal, bold);
+  --code-an-fw: light-dark(bold, normal);
+  --code-cn-fw: light-dark(normal, bold);
+  --code-cv-fw: light-dark(bold, normal);
+  --code-do-fw: light-dark(bold, normal);
+  --code-er-fw: light-dark(bold, normal);
+  --code-ex-fw: light-dark(normal, bold);
+  --code-in-fw: light-dark(bold, normal);
+  --code-wa-fw: light-dark(bold, normal);
+
+  /* syntax highlighting: font styles */
+  --code-an-fs: light-dark(italic, normal);
+  --code-co-fs: light-dark(normal, normal);
+  --code-cv-fs: light-dark(italic, normal);
+  --code-do-fs: light-dark(italic, normal);
+  --code-in-fs: light-dark(italic, normal);
+  --code-pp-fs: light-dark(italic, normal);
+  --code-wa-fs: light-dark(italic, normal);
+
+  /* syntax highlighting: text decoration */
+  --code-er-td: light-dark(none, none);
+}
+
+/* Base body styles */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0 auto;
+  padding: 2rem;
+  max-width: 50rem;
+  container-type: size;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--heading-color);
+  margin-top: 1em;
+}
+
+h1 {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.3em;
+}
+
+/* Links */
+a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.1lh;
+  text-decoration-skip-ink: auto;
+  text-decoration-thickness: 0.12em;
+}
+
+/* Code blocks and inline code */
+pre,
+code {
+  background-color: var(--code-bg-color);
+  color: var(--code-text-color);
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+pre {
+  padding: 1em;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* syntax highlighting tokens */
+code span.al {
+  color: var(--code-al-color);
+  background-color: var(--code-al-bgcolor);
+  font-weight: var(--code-al-fw);
+}
+code span.an {
+  color: var(--code-an-color);
+  font-weight: var(--code-an-fw);
+  font-style: var(--code-an-fs);
+}
+code span.at {
+  color: var(--code-at-color);
+}
+code span.bn {
+  color: var(--code-bn-color);
+}
+code span.bu {
+  color: var(--code-bu-color);
+}
+code span.cf {
+  color: var(--code-cf-color);
+  font-weight: bold;
+}
+code span.ch {
+  color: var(--code-ch-color);
+}
+code span.cn {
+  color: var(--code-cn-color);
+  font-weight: var(--code-cn-fw);
+}
+code span.co {
+  color: var(--code-co-color);
+  font-style: var(--code-co-fs);
+}
+code span.cv {
+  color: var(--code-cv-color);
+  font-weight: var(--code-cv-fw);
+  font-style: var(--code-cv-fs);
+}
+code span.do {
+  color: var(--code-do-color);
+  font-weight: var(--code-do-fw);
+  font-style: var(--code-do-fs);
+}
+code span.dt {
+  color: var(--code-dt-color);
+}
+code span.dv {
+  color: var(--code-dv-color);
+}
+code span.er {
+  color: var(--code-er-color);
+  font-weight: var(--code-er-fw);
+  text-decoration: var(--code-er-td);
+}
+code span.ex {
+  color: var(--code-ex-color);
+  font-weight: var(--code-ex-fw);
+}
+code span.fl {
+  color: var(--code-fl-color);
+}
+code span.fu {
+  color: var(--code-fu-color);
+}
+code span.im {
+  color: var(--code-im-color);
+}
+code span.in {
+  color: var(--code-in-color);
+  font-weight: var(--code-in-fw);
+  font-style: var(--code-in-fs);
+}
+code span.kw {
+  color: var(--code-kw-color);
+  font-weight: bold;
+}
+code span.op {
+  color: var(--code-op-color);
+}
+code span.ot {
+  color: var(--code-ot-color);
+}
+code span.pp {
+  color: var(--code-pp-color);
+  font-style: var(--code-pp-fs);
+}
+code span.re {
+  color: var(--code-re-color);
+  background-color: var(--code-re-bgcolor);
+}
+code span.sc {
+  color: var(--code-sc-color);
+}
+code span.ss {
+  color: var(--code-ss-color);
+}
+code span.st {
+  color: var(--code-st-color);
+}
+code span.va {
+  color: var(--code-va-color);
+}
+code span.vs {
+  color: var(--code-vs-color);
+}
+code span.wa {
+  color: var(--code-wa-color);
+  font-weight: var(--code-wa-fw);
+  font-style: var(--code-wa-fs);
+}
+
+/* Blockquotes */
+blockquote {
+  border-left: 4px solid var(--border-color);
+  margin: 1em 0;
+  padding-left: 1em;
+  color: var(--blockquote-color);
+  font-style: italic;
+}
+
+/* Lists */
+ul,
+ol {
+  padding-left: 1.5em;
+}
+
+li {
+  list-style-type: square;
+}
+
+time {
+  white-space: nowrap;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  margin: 1em 0;
+  max-width: 100%;
+}
+table,
+th,
+td {
+  border: 1px solid var(--border-color);
+}
+th,
+td {
+  padding: 0.5em;
+}
+th {
+  background: var(--th-bg-color);
+  color: var(--th-text-color);
+}
+
+/* Media (images, videos, iframes) */
+img,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  img[src*=".svg"] {
+    filter: invert(80%) hue-rotate(180deg);
+  }
+}
+
+/* Horizontal rule */
+hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Paragraph spacing */
+p {
+  margin: 1em 0;
+}
+
+nav {
+  display: flex;
+  justify-content: space-around;
+  margin: 0 auto;
+}
+
+/*@container (width < 35rem) {
+  nav {
+    flex-direction: column;
+    text-align: right;
+  }
+}*/
+
+@container (width > 45rem) {
+  nav {
+    max-width: 70cqi;
+  }
+}
+
+footer {
+  border-top: 1px solid var(--border-color);
+  padding: 0.25em;
+  text-align: center;
+  font-size: smaller;
+}
+
+.post-info {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  padding-block-end: 1em;
+}
+
+.post-info > * {
+  margin-block: 0.1em;
+}
+
+@container (width < 35rem) {
+  .post-info {
+    flex-direction: column;
+    margin-block: 1em;
+  }
+}
+
+ul.tags {
+  padding: 0;
+}
+
+ul.tags li {
+  display: inline-block;
+  border: 1px solid var(--tag-border-color);
+  border-radius: 5px;
+  padding: 0 5px;
+}
+
+.feed-icon {
+  float: right;
+}
+
+.feed-icon > svg {
+  margin-bottom: -1.1em;
+}
+
+main.home .feed-icon > svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+main.archive .feed-icon > svg {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+main hr {
+  max-width: 50%;
+}
+
+main #footnotes hr {
+  max-width: 100%;
+}

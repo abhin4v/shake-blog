@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom"><title type="text">BlogShake</title><id>https://abhin4v.github.io/shake-blog/feed.atom</id><updated>2026-07-19T00:00:00Z</updated><link href="https://abhin4v.github.io/shake-blog/feed.atom" rel="self"/><link href="https://abhin4v.github.io/shake-blog"/><author><name>Abhinav Sarkar</name><uri>https://abhinavsarkar.net/about/</uri><email>abhinav@abhinavsarkar.net</email></author><category label="guide" term="guide"/><category label="shake" term="shake"/><category label="github-pages" term="github-pages"/><category label="demo" term="demo"/><category label="markdown" term="markdown"/><rights type="text">© 2026, Abhinav Sarkar</rights><entry><id>https://abhin4v.github.io/shake-blog/posts/2026-07-19-getting-started/</id><title type="text">Getting Started with BlogShake</title><updated>2026-07-19T00:00:00Z</updated><author><name>Abhinav Sarkar</name><uri>https://abhinavsarkar.net/about/</uri><email>abhinav@abhinavsarkar.net</email></author><category label="guide" term="guide"/><category label="shake" term="shake"/><content type="html">&lt;p&gt;This blog is built with &lt;a
+href="https://github.com/abhin4v/shake-blog"&gt;BlogShake&lt;/a&gt; — an
+unopinionated static site generator (SSG) built upon &lt;a
+href="https://shakebuild.com"&gt;Shake&lt;/a&gt;, a build system written in &lt;a
+href="https://haskell.org"&gt;Haskell&lt;/a&gt;. It is &lt;strong&gt;not&lt;/strong&gt; a
+framework or a platform. It sets the bare minimum pattern for building
+an SSG over Shake, and expects you to learn and extend it to fit your
+needs.&lt;/p&gt;
+&lt;p&gt;That said, even without any extension, this is a perfectly working
+SSG. It produces a blog with posts, standalone pages, tag archives, and
+an Atom feed.&lt;/p&gt;
+&lt;p&gt;This post explains how it works and how to use it.&lt;/p&gt;
+&lt;h2 id="prerequisites"&gt;Prerequisites&lt;/h2&gt;
+&lt;p&gt;BlogShake uses &lt;a href="https://nixos.org/"&gt;Nix&lt;/a&gt; to download the
+dependencies.&lt;/p&gt;
+&lt;h2 id="quickstart"&gt;Quickstart&lt;/h2&gt;
+&lt;p&gt;Run:&lt;/p&gt;
+&lt;div class="sourceCode" id="cb1"&gt;&lt;pre class="sourceCode sh"&gt;&lt;code class="sourceCode bash"&gt;&lt;span id="cb1-1"&gt;&lt;a href="#cb1-1" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="ex"&gt;./blog.hs&lt;/span&gt; build&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The site is generated in the &lt;code&gt;_site&lt;/code&gt; directory. You can
+run &lt;code&gt;python3 -m http.server -d _site&lt;/code&gt; to start an HTTP
+server, and browse your website.&lt;/p&gt;
+&lt;p&gt;To enable parallel builds:&lt;/p&gt;
+&lt;div class="sourceCode" id="cb2"&gt;&lt;pre class="sourceCode sh"&gt;&lt;code class="sourceCode bash"&gt;&lt;span id="cb2-1"&gt;&lt;a href="#cb2-1" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="ex"&gt;./blog.hs&lt;/span&gt; build &lt;span class="at"&gt;-j4&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Clean the output:&lt;/p&gt;
+&lt;div class="sourceCode" id="cb3"&gt;&lt;pre class="sourceCode sh"&gt;&lt;code class="sourceCode bash"&gt;&lt;span id="cb3-1"&gt;&lt;a href="#cb3-1" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="ex"&gt;./blog.hs&lt;/span&gt; clean&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Run &lt;code&gt;./blog.hs --help&lt;/code&gt; to see all Shake build options
+(parallelism, progress reporting, profile, etc.).&lt;/p&gt;
+&lt;h3 id="continuous-build"&gt;Continuous Build&lt;/h3&gt;
+&lt;p&gt;For automatic rebuilds on file changes, use &lt;a
+href="https://github.com/eradman/entr"&gt;&lt;code&gt;entr&lt;/code&gt;&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="sourceCode" id="cb4"&gt;&lt;pre class="sourceCode sh"&gt;&lt;code class="sourceCode bash"&gt;&lt;span id="cb4-1"&gt;&lt;a href="#cb4-1" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="ex"&gt;brew&lt;/span&gt; install entr  &lt;span class="co"&gt;# macOS&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb4-2"&gt;&lt;a href="#cb4-2" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="fu"&gt;git&lt;/span&gt; ls-files &lt;span class="kw"&gt;|&lt;/span&gt; &lt;span class="ex"&gt;entr&lt;/span&gt; &lt;span class="at"&gt;-c&lt;/span&gt; ./blog.hs build&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;In a different terminal, run
+&lt;code&gt;python3 -m http.server -d _site&lt;/code&gt; to serve the website.&lt;/p&gt;
+&lt;h2 id="project-structure"&gt;Project Structure&lt;/h2&gt;
+&lt;p&gt;&lt;img
+src="https://abhin4v.github.io/shake-blog/images/project-structure.svg" /&gt;&lt;/p&gt;
+&lt;h2 id="configuration"&gt;Configuration&lt;/h2&gt;
+&lt;p&gt;Edit &lt;code&gt;config.yaml&lt;/code&gt; to set your blog’s title, URL,
+description, and authors:&lt;/p&gt;
+&lt;div class="sourceCode" id="cb5"&gt;&lt;pre
+class="sourceCode yaml"&gt;&lt;code class="sourceCode yaml"&gt;&lt;span id="cb5-1"&gt;&lt;a href="#cb5-1" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="fu"&gt;title&lt;/span&gt;&lt;span class="kw"&gt;:&lt;/span&gt;&lt;span class="at"&gt; My Blog&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb5-2"&gt;&lt;a href="#cb5-2" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="fu"&gt;url&lt;/span&gt;&lt;span class="kw"&gt;:&lt;/span&gt;&lt;span class="at"&gt; https://example.com&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb5-3"&gt;&lt;a href="#cb5-3" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="fu"&gt;description&lt;/span&gt;&lt;span class="kw"&gt;:&lt;/span&gt;&lt;span class="at"&gt; A blog about things.&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb5-4"&gt;&lt;a href="#cb5-4" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="fu"&gt;authors&lt;/span&gt;&lt;span class="kw"&gt;:&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb5-5"&gt;&lt;a href="#cb5-5" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="at"&gt;  &lt;/span&gt;&lt;span class="kw"&gt;-&lt;/span&gt;&lt;span class="at"&gt; &lt;/span&gt;&lt;span class="fu"&gt;name&lt;/span&gt;&lt;span class="kw"&gt;:&lt;/span&gt;&lt;span class="at"&gt; Your Name&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb5-6"&gt;&lt;a href="#cb5-6" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="at"&gt;    &lt;/span&gt;&lt;span class="fu"&gt;uri&lt;/span&gt;&lt;span class="kw"&gt;:&lt;/span&gt;&lt;span class="at"&gt; https://example.com/about/&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb5-7"&gt;&lt;a href="#cb5-7" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="at"&gt;    &lt;/span&gt;&lt;span class="fu"&gt;email&lt;/span&gt;&lt;span class="kw"&gt;:&lt;/span&gt;&lt;span class="at"&gt; you@example.com&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb5-8"&gt;&lt;a href="#cb5-8" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="at"&gt;    &lt;/span&gt;&lt;span class="fu"&gt;copyright_year&lt;/span&gt;&lt;span class="kw"&gt;:&lt;/span&gt;&lt;span class="at"&gt; &lt;/span&gt;&lt;span class="st"&gt;&amp;quot;2026&amp;quot;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The generator requires at least one author.&lt;/p&gt;
+&lt;h2 id="customizing-the-generator"&gt;Customizing the Generator&lt;/h2&gt;
+&lt;p&gt;The build settings live at the top of &lt;code&gt;blog.hs&lt;/code&gt; in the
+&lt;code&gt;Settings&lt;/code&gt; section:&lt;/p&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col style="width: 33%" /&gt;
+&lt;col style="width: 33%" /&gt;
+&lt;col style="width: 33%" /&gt;
+&lt;/colgroup&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Setting&lt;/th&gt;
+&lt;th&gt;Default&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;outputDir&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;"_site"&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Where the generated site goes&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;assetGlobs&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;["css/*.css", "images/*.png", "images/*.svg", "images/*.jpg"]&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Patterns for static files to copy verbatim&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;postGlobs&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;["posts/*.md"]&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Glob pattern for finding post source files&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;pagePaths&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;["contact.md"]&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;List of standalone Markdown page sources
+(e.g. &lt;code&gt;["about.md", "contact.md"]&lt;/code&gt;)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;archivePath&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;"archive"&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Subdirectory for the post archive&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;tagArchivePath&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;"tags"&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Subdirectory for per-tag post listings&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;homePostCount&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;5&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Number of recent posts shown on the homepage&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;feedFileName&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;"feed.atom"&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Name of the Atom feed file&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Everything else in &lt;code&gt;blog.hs&lt;/code&gt; is meant to be read and
+modified as your site grows; add new page types, change the URL
+structure, wire in new Shake rules. See &lt;a
+href="https://abhin4v.github.io/shake-blog/posts/2026-07-17-blogshake-features/"&gt;BlogShake
+Features in Detail&lt;/a&gt; for a tour of features.&lt;/p&gt;
+&lt;h2 id="output"&gt;Output&lt;/h2&gt;
+&lt;p&gt;Running &lt;code&gt;./blog.hs build&lt;/code&gt; produces this site structure
+under the output directory (&lt;code&gt;_site&lt;/code&gt; by default):&lt;/p&gt;
+&lt;p&gt;&lt;img
+src="https://abhin4v.github.io/shake-blog/images/output-structure.svg" /&gt;&lt;/p&gt;
+&lt;p&gt;Each post and standalone page gets its own directory with an
+&lt;code&gt;index.html&lt;/code&gt; so URLs are clean
+(e.g. &lt;code&gt;/my-first-post/&lt;/code&gt; or &lt;code&gt;/contact/&lt;/code&gt;).&lt;/p&gt;
+&lt;h2 id="writing-posts"&gt;Writing Posts&lt;/h2&gt;
+&lt;p&gt;Posts live in &lt;code&gt;posts/&lt;/code&gt; as Markdown files with YAML front
+matter. The filename &lt;strong&gt;must&lt;/strong&gt; start with
+&lt;code&gt;YYYY-MM-DD-&lt;/code&gt;.&lt;/p&gt;
+&lt;div class="sourceCode" id="cb6"&gt;&lt;pre
+class="sourceCode markdown"&gt;&lt;code class="sourceCode markdown"&gt;&lt;span id="cb6-1"&gt;&lt;a href="#cb6-1" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="co"&gt;---&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb6-2"&gt;&lt;a href="#cb6-2" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="an"&gt;title:&lt;/span&gt;&lt;span class="co"&gt; My first post&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb6-3"&gt;&lt;a href="#cb6-3" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="an"&gt;author:&lt;/span&gt;&lt;span class="co"&gt; Your Name          # optional; defaults to the first author in config&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb6-4"&gt;&lt;a href="#cb6-4" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="an"&gt;tags:&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb6-5"&gt;&lt;a href="#cb6-5" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="co"&gt;  - haskell&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb6-6"&gt;&lt;a href="#cb6-6" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="co"&gt;  - shake&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb6-7"&gt;&lt;a href="#cb6-7" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="co"&gt;---&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb6-8"&gt;&lt;a href="#cb6-8" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;/span&gt;
+&lt;span id="cb6-9"&gt;&lt;a href="#cb6-9" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;Post content goes here.&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h2 id="template-variables"&gt;Template Variables&lt;/h2&gt;
+&lt;p&gt;Post pages receive:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Variable&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;title&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Post title&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;author&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Post author (if set in front matter)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;tags&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;List of tags&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;date&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Formatted date (e.g. &lt;code&gt;July 17, 2026&lt;/code&gt;)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;date_time&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;ISO-8601 date (e.g. &lt;code&gt;2026-07-17T00:00:00Z&lt;/code&gt;)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;content&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Post body as HTML&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;url&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Absolute URL of the post&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;base_url&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Site base URL (empty in dev, &lt;code&gt;config.url&lt;/code&gt; in prod)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;site&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Full site config object&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;The &lt;code&gt;site&lt;/code&gt; object exposes &lt;code&gt;site.title&lt;/code&gt;,
+&lt;code&gt;site.url&lt;/code&gt;, &lt;code&gt;site.description&lt;/code&gt;,
+&lt;code&gt;site.author&lt;/code&gt; (first author), and &lt;code&gt;site.authors&lt;/code&gt;
+(all authors) variables.&lt;/p&gt;
+&lt;p&gt;Page (non-post) templates receive &lt;code&gt;site&lt;/code&gt;,
+&lt;code&gt;base_url&lt;/code&gt;, &lt;code&gt;title&lt;/code&gt;, &lt;code&gt;main_class&lt;/code&gt;, and
+&lt;code&gt;content&lt;/code&gt; variables.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;main_class&lt;/code&gt; is a CSS class name set per-page by the
+generator (e.g. &lt;code&gt;"post"&lt;/code&gt;, &lt;code&gt;"page"&lt;/code&gt;,
+&lt;code&gt;"home"&lt;/code&gt;, &lt;code&gt;"archive"&lt;/code&gt;). It is set on
+&lt;code&gt;&amp;lt;main&amp;gt;&lt;/code&gt; in the default template, letting you style
+different page types differently without extra template logic.&lt;/p&gt;
+&lt;h2 id="environment-and-base_url"&gt;Environment and
+&lt;code&gt;base_url&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;Set &lt;code&gt;ENV=PROD&lt;/code&gt; when building for deployment:&lt;/p&gt;
+&lt;div class="sourceCode" id="cb7"&gt;&lt;pre class="sourceCode sh"&gt;&lt;code class="sourceCode bash"&gt;&lt;span id="cb7-1"&gt;&lt;a href="#cb7-1" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="va"&gt;ENV&lt;/span&gt;&lt;span class="op"&gt;=&lt;/span&gt;PROD &lt;span class="ex"&gt;./blog.hs&lt;/span&gt; build&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;In &lt;code&gt;PROD&lt;/code&gt; mode, &lt;code&gt;base_url&lt;/code&gt; is set to the
+&lt;code&gt;url&lt;/code&gt; from &lt;code&gt;config.yaml&lt;/code&gt;, so all links point to
+your live site. When &lt;code&gt;ENV&lt;/code&gt; is unset or set to anything else
+(e.g. the default &lt;code&gt;DEV&lt;/code&gt;), &lt;code&gt;base_url&lt;/code&gt; is empty and
+links are relative. This means you can preview the site locally, and the
+same build produces absolute URLs when deployed.&lt;/p&gt;
+&lt;h2 id="hosting-on-github-pages"&gt;Hosting on GitHub Pages&lt;/h2&gt;
+&lt;p&gt;See the post on &lt;a
+href="https://abhin4v.github.io/shake-blog/posts/2026-07-18-hosting-on-github-pages/"&gt;hosting
+on GitHub Pages&lt;/a&gt; for instructions on deploying the blog with GitHub
+Actions and Pages.&lt;/p&gt;</content><link href="https://abhin4v.github.io/shake-blog/posts/2026-07-19-getting-started/" rel="alternate"/><published>2026-07-19T00:00:00Z</published><rights type="text">© 2026, Abhinav Sarkar</rights></entry><entry><id>https://abhin4v.github.io/shake-blog/posts/2026-07-18-hosting-on-github-pages/</id><title type="text">Hosting BlogShake on GitHub Pages</title><updated>2026-07-18T00:00:00Z</updated><author><name>Abhinav Sarkar</name><uri>https://abhinavsarkar.net/about/</uri><email>abhinav@abhinavsarkar.net</email></author><category label="guide" term="guide"/><category label="github-pages" term="github-pages"/><content type="html">&lt;p&gt;Run a BlogShake blog on GitHub Actions and Pages: fork the repo, set
+the config, and let the Action build and publish the site for you.&lt;/p&gt;
+&lt;h2 id="quickstart"&gt;Quickstart&lt;/h2&gt;
+&lt;ol type="1"&gt;
+&lt;li&gt;Fork this &lt;a
+href="https://github.com/abhin4v/shake-blog/fork"&gt;repository&lt;/a&gt; on
+GitHub or use it as a &lt;a
+href="https://github.com/new?template_name=shake-blog&amp;amp;template_owner=abhin4v"&gt;template&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Edit &lt;a
+href="https://github.com/abhin4v/shake-blog/blob/main/config.yaml"&gt;&lt;code&gt;config.yaml&lt;/code&gt;&lt;/a&gt;:
+set your site’s title, URL, description, and authors.&lt;/li&gt;
+&lt;li&gt;&lt;a href="#setting-up-the-github-action"&gt;Set up the GitHub
+Action&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;a href="#setting-up-github-pages"&gt;Set up GitHub Pages&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Push your changes. The action builds the site and publishes it.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id="setting-up-the-github-action"&gt;Setting up the GitHub Action&lt;/h2&gt;
+&lt;p&gt;The workflow at &lt;a
+href="https://github.com/abhin4v/shake-blog/blob/main/.github/workflows/build.yml"&gt;&lt;code&gt;.github/workflows/build.yml&lt;/code&gt;&lt;/a&gt;
+runs on every push to &lt;code&gt;main&lt;/code&gt; and on manual dispatch. It
+builds the site and pushes the result to a &lt;code&gt;gh-pages&lt;/code&gt;
+branch.&lt;/p&gt;
+&lt;ol type="1"&gt;
+&lt;li&gt;In your fork, go to &lt;strong&gt;Settings &amp;gt; Actions &amp;gt;
+General&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;Under &lt;strong&gt;Workflow permissions&lt;/strong&gt;, select &lt;strong&gt;Read and
+write permissions&lt;/strong&gt; and click &lt;strong&gt;Save&lt;/strong&gt;. This lets
+the workflow create and update the &lt;code&gt;gh-pages&lt;/code&gt; branch.&lt;/li&gt;
+&lt;li&gt;Go to the &lt;strong&gt;Actions&lt;/strong&gt; tab. If Actions are disabled on
+your fork, click &lt;em&gt;I understand my workflows, go ahead and enable
+them&lt;/em&gt;.&lt;/li&gt;
+&lt;li&gt;Open the &lt;strong&gt;Build&lt;/strong&gt; workflow and click &lt;strong&gt;Enable
+workflow&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;Click &lt;strong&gt;Run workflow&lt;/strong&gt; to trigger the first build
+manually.&lt;/li&gt;
+&lt;li&gt;Wait for the run to finish. It will create a &lt;code&gt;gh-pages&lt;/code&gt;
+branch in your fork containing the generated site.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id="setting-up-github-pages"&gt;Setting up GitHub Pages&lt;/h2&gt;
+&lt;p&gt;After the first successful Action run has created the
+&lt;code&gt;gh-pages&lt;/code&gt; branch:&lt;/p&gt;
+&lt;ol type="1"&gt;
+&lt;li&gt;Go to &lt;strong&gt;Settings &amp;gt; Pages&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;Under &lt;strong&gt;Build and deployment&lt;/strong&gt;, set
+&lt;strong&gt;Source&lt;/strong&gt; to &lt;strong&gt;Deploy from a branch&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;Set &lt;strong&gt;Branch&lt;/strong&gt; to &lt;code&gt;gh-pages&lt;/code&gt; and the folder
+to &lt;code&gt;/ (root)&lt;/code&gt;. Click &lt;strong&gt;Save&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;Wait a minute, then refresh the Pages settings page. GitHub will
+show the public URL,
+e.g. &lt;code&gt;https://&amp;lt;you&amp;gt;.github.io/&amp;lt;repo&amp;gt;/&lt;/code&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;If you use a custom domain, add a &lt;code&gt;CNAME&lt;/code&gt; file to the repo
+root containing your domain (the workflow copies it into
+&lt;code&gt;_site/&lt;/code&gt; so it lands at the root of the &lt;code&gt;gh-pages&lt;/code&gt;
+branch), and configure the domain under &lt;strong&gt;Settings &amp;gt; Pages &amp;gt;
+Custom domain&lt;/strong&gt;. Without the &lt;code&gt;CNAME&lt;/code&gt; file in the
+published branch, GitHub clears the custom-domain setting on every
+deploy. Update the &lt;code&gt;url&lt;/code&gt; config in &lt;code&gt;config.yaml&lt;/code&gt;
+to match your custom URL.&lt;/p&gt;</content><link href="https://abhin4v.github.io/shake-blog/posts/2026-07-18-hosting-on-github-pages/" rel="alternate"/><published>2026-07-18T00:00:00Z</published><rights type="text">© 2026, Abhinav Sarkar</rights></entry><entry><id>https://abhin4v.github.io/shake-blog/posts/2026-07-17-blogshake-features/</id><title type="text">BlogShake Features in Detail</title><updated>2026-07-17T00:00:00Z</updated><author><name>Abhinav Sarkar</name><uri>https://abhinavsarkar.net/about/</uri><email>abhinav@abhinavsarkar.net</email></author><category label="shake" term="shake"/><category label="guide" term="guide"/><content type="html">&lt;p&gt;Most static site generators are applications with conventions and
+plugins. They work well until you need something they didn’t anticipate.
+BlogShake takes a different approach: a working &lt;a
+href="https://shakebuild.com/"&gt;Shake&lt;/a&gt; build script that you are meant
+to read and modify. This post covers its main features. For getting
+started, see &lt;a
+href="https://abhin4v.github.io/shake-blog/posts/2026-07-19-getting-started/"&gt;Getting
+Started with BlogShake&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id="build-system-approach"&gt;Build System Approach&lt;/h2&gt;
+&lt;p&gt;&lt;a href="https://shakebuild.com/"&gt;Shake&lt;/a&gt; is a build system written
+in &lt;a href="https://haskell.org"&gt;Haskell&lt;/a&gt;. It can be used to build
+anything, in this case we use it to build a website. Building on Shake
+gives us parallelism, incremental rebuilds, caching, profiling, and
+detailed error messages for free&lt;a href="#fn1" class="footnote-ref"
+id="fnref1" role="doc-noteref"&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id="zero-setup-dependencies"&gt;Zero-Setup Dependencies&lt;/h2&gt;
+&lt;p&gt;All dependencies are managed by &lt;a href="https://nixos.org/"&gt;Nix&lt;/a&gt;.
+No compilation is needed to run the generator.&lt;/p&gt;
+&lt;h2 id="pandoc-based-rendering"&gt;Pandoc-Based Rendering&lt;/h2&gt;
+&lt;p&gt;Posts are Markdown files with YAML front matter. We get &lt;a
+href="https://pandoc.org/"&gt;Pandoc&lt;/a&gt;’s full Markdown support:
+footnotes, definition lists, tables, math, syntax highlighting.&lt;/p&gt;
+&lt;p&gt;Alongside posts, standalone pages (about, contact, etc.) can be added
+via the &lt;code&gt;pagePaths&lt;/code&gt; setting. They work the same way but skip
+dates and tags.&lt;/p&gt;
+&lt;p&gt;The site configuration supports multiple author profiles with name,
+URI, email, and copyright year. Posts can override the default author
+via front matter, and the Atom feed resolves each post to the matching
+author’s full profile for proper attribution.&lt;/p&gt;
+&lt;h3 id="code-highlighting"&gt;Code Highlighting&lt;/h3&gt;
+&lt;p&gt;Code blocks are highlighted by Pandoc using CSS classes. The default
+stylesheet provides syntax highlighting colors for code tokens. It uses
+the &lt;code&gt;light-dark()&lt;/code&gt; function so that highlighting adapts to
+light and dark modes automatically.&lt;/p&gt;
+&lt;h2 id="clean-urls"&gt;Clean URLs&lt;/h2&gt;
+&lt;p&gt;Every page gets its own directory with an &lt;code&gt;index.html&lt;/code&gt;, so
+no &lt;code&gt;.html&lt;/code&gt; extensions:&lt;/p&gt;
+&lt;pre class="plain"&gt;&lt;code&gt;_site/posts/my-first-post/index.html  -&amp;gt;  /posts/my-first-post/
+_site/contact/index.html              -&amp;gt;  /contact/&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id="responsive-css-with-dark-mode-support"&gt;Responsive CSS with Dark
+Mode Support&lt;/h2&gt;
+&lt;p&gt;The blog looks good on all screen sizes due to responsive CSS. Light
+and dark modes are also supported using the CSS
+&lt;code&gt;light-dark()&lt;/code&gt; function.&lt;/p&gt;
+&lt;h2 id="dev-and-prod-modes"&gt;Dev and Prod Modes&lt;/h2&gt;
+&lt;p&gt;Set &lt;code&gt;ENV=PROD&lt;/code&gt; for absolute URLs, unset for relative:&lt;/p&gt;
+&lt;div class="sourceCode" id="cb2"&gt;&lt;pre class="sourceCode sh"&gt;&lt;code class="sourceCode bash"&gt;&lt;span id="cb2-1"&gt;&lt;a href="#cb2-1" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="ex"&gt;./blog.hs&lt;/span&gt; build              &lt;span class="co"&gt;# relative URLs, open locally&lt;/span&gt;&lt;/span&gt;
+&lt;span id="cb2-2"&gt;&lt;a href="#cb2-2" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="va"&gt;ENV&lt;/span&gt;&lt;span class="op"&gt;=&lt;/span&gt;PROD &lt;span class="ex"&gt;./blog.hs&lt;/span&gt; build     &lt;span class="co"&gt;# absolute URLs, deploy&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Only the &lt;code&gt;base_url&lt;/code&gt; variable changes between modes.
+Content and structure are identical.&lt;/p&gt;
+&lt;h2 id="atom-feed-archives-and-tags"&gt;Atom Feed, Archives, and Tags&lt;/h2&gt;
+&lt;p&gt;The generator produces an Atom feed at &lt;code&gt;/feed.atom&lt;/code&gt;, a
+reverse-chronological archive at &lt;code&gt;/archive/&lt;/code&gt;, and per-tag
+pages at &lt;code&gt;/tags/&amp;lt;tag&amp;gt;/&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id="cicd"&gt;CI/CD&lt;/h2&gt;
+&lt;p&gt;The included GitHub Actions workflow builds the site with
+&lt;code&gt;ENV=PROD&lt;/code&gt; and publishes to GitHub Pages on every push. See
+the &lt;a
+href="https://abhin4v.github.io/shake-blog/posts/2026-07-18-hosting-on-github-pages/"&gt;hosting
+guide&lt;/a&gt; for setup.&lt;/p&gt;
+&lt;h2 id="extensibility"&gt;Extensibility&lt;/h2&gt;
+&lt;p&gt;Everything lives in &lt;code&gt;blog.hs&lt;/code&gt;, organized into labeled
+sections. Extend &lt;code&gt;blog.hs&lt;/code&gt; to add any functionality you want
+to your website. The full Shake API is available to you.&lt;/p&gt;
+&lt;section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes"&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id="fn1"&gt;&lt;p&gt;See &lt;a
+href="https://github.com/ChrisPenner/slick"&gt;Slick&lt;/a&gt; and &lt;a
+href="https://github.com/srid/rib"&gt;Rib&lt;/a&gt; for other Shake-based SSGs.
+BlogShake differs by exposing Shake directly rather than hiding it
+behind a framework.&lt;a href="#fnref1" class="footnote-back"
+role="doc-backlink"&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/section&gt;</content><link href="https://abhin4v.github.io/shake-blog/posts/2026-07-17-blogshake-features/" rel="alternate"/><published>2026-07-17T00:00:00Z</published><rights type="text">© 2026, Abhinav Sarkar</rights></entry><entry><id>https://abhin4v.github.io/shake-blog/posts/2026-07-16-markdown-demo/</id><title type="text">Markdown Demo</title><updated>2026-07-16T00:00:00Z</updated><author><name>Abhinav Sarkar</name><uri>https://abhinavsarkar.net/about/</uri><email>abhinav@abhinavsarkar.net</email></author><category label="demo" term="demo"/><category label="markdown" term="markdown"/><content type="html">&lt;p&gt;It’s very easy to make some words &lt;strong&gt;bold&lt;/strong&gt; and other
+words &lt;em&gt;italic&lt;/em&gt; with Markdown. You can even &lt;a
+href="http://google.com"&gt;link to Google!&lt;/a&gt;.&lt;/p&gt;
+&lt;h1 id="this-is-an-h1-tag"&gt;This is an h1 tag&lt;/h1&gt;
+&lt;h2 id="this-is-an-h2-tag"&gt;This is an h2 tag&lt;/h2&gt;
+&lt;h3 id="this-is-an-h3-tag"&gt;This is an h3 tag&lt;/h3&gt;
+&lt;h4 id="this-is-an-h4-tag"&gt;This is an h4 tag&lt;/h4&gt;
+&lt;h5 id="this-is-an-h5-tag"&gt;This is an h5 tag&lt;/h5&gt;
+&lt;h6 id="this-is-an-h6-tag"&gt;This is an h6 tag&lt;/h6&gt;
+&lt;p&gt;&lt;em&gt;This text will be italic&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;This will also be italic&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;This text will be bold&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;This will also be bold&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;You &lt;strong&gt;can&lt;/strong&gt; combine them&lt;/em&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Item 1&lt;/li&gt;
+&lt;li&gt;Item 2
+&lt;ul&gt;
+&lt;li&gt;Item 2a&lt;/li&gt;
+&lt;li&gt;Item 2b&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol type="1"&gt;
+&lt;li&gt;Item 1&lt;/li&gt;
+&lt;li&gt;Item 2&lt;/li&gt;
+&lt;li&gt;Item 3
+&lt;ol type="1"&gt;
+&lt;li&gt;Item 3a&lt;/li&gt;
+&lt;li&gt;Item 3b&lt;/li&gt;
+&lt;/ol&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;As Kanye West said:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;We’re living the future so the present is our past.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;I think you should use an &lt;code&gt;&amp;lt;code&amp;gt;&lt;/code&gt; element here
+instead.&lt;/p&gt;
+&lt;p&gt;And this is a horizontal rule.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2 id="code"&gt;Code&lt;/h2&gt;
+&lt;p&gt;There are many different ways to style code with Pandoc’s markdown.
+If you have inline code blocks, wrap them in backticks: &lt;code
+class="sourceCode javascript js"&gt;&lt;span class="kw"&gt;var&lt;/span&gt; example &lt;span class="op"&gt;=&lt;/span&gt; &lt;span class="kw"&gt;true&lt;/span&gt;&lt;/code&gt;.
+You can also add a block of code:&lt;/p&gt;
+&lt;div class="sourceCode" id="cb1"&gt;&lt;pre
+class="sourceCode javascript"&gt;&lt;code class="sourceCode javascript"&gt;&lt;span id="cb1-1"&gt;&lt;a href="#cb1-1" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;&lt;span class="kw"&gt;function&lt;/span&gt; &lt;span class="fu"&gt;fancyAlert&lt;/span&gt;(arg) {&lt;/span&gt;
+&lt;span id="cb1-2"&gt;&lt;a href="#cb1-2" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;  &lt;span class="cf"&gt;if&lt;/span&gt;(arg) {&lt;/span&gt;
+&lt;span id="cb1-3"&gt;&lt;a href="#cb1-3" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;    $&lt;span class="op"&gt;.&lt;/span&gt;&lt;span class="fu"&gt;facebox&lt;/span&gt;({&lt;span class="dt"&gt;div&lt;/span&gt;&lt;span class="op"&gt;:&lt;/span&gt;&lt;span class="st"&gt;&amp;#39;#foo&amp;#39;&lt;/span&gt;})&lt;/span&gt;
+&lt;span id="cb1-4"&gt;&lt;a href="#cb1-4" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;  }&lt;/span&gt;
+&lt;span id="cb1-5"&gt;&lt;a href="#cb1-5" aria-hidden="true" tabindex="-1"&gt;&lt;/a&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h2 id="task-lists"&gt;Task Lists&lt;/h2&gt;
+&lt;ul class="task-list"&gt;
+&lt;li&gt;&lt;label&gt;&lt;input type="checkbox" checked="" /&gt;this is a complete
+item&lt;/label&gt;&lt;/li&gt;
+&lt;li&gt;&lt;label&gt;&lt;input type="checkbox" /&gt;this is an incomplete
+item&lt;/label&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="tables"&gt;Tables&lt;/h2&gt;
+&lt;p&gt;You can create tables by assembling a list of words and dividing them
+with hyphens &lt;code&gt;-&lt;/code&gt; (for the first row), and then separating
+each column with a pipe &lt;code&gt;|&lt;/code&gt;:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;First Header&lt;/th&gt;
+&lt;th&gt;Second Header&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Content from cell 1&lt;/td&gt;
+&lt;td&gt;Content from cell 2&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Content in the first column&lt;/td&gt;
+&lt;td&gt;Content in the second column&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;</content><link href="https://abhin4v.github.io/shake-blog/posts/2026-07-16-markdown-demo/" rel="alternate"/><published>2026-07-16T00:00:00Z</published><rights type="text">© 2026, Abhinav Sarkar</rights></entry></feed>
