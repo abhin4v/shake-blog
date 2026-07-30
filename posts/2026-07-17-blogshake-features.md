@@ -16,7 +16,7 @@ Most static site generators are applications with conventions and plugins. They 
 
 ## Zero-Setup Dependencies
 
-All dependencies are managed by [Nix]. No compilation is needed to run the generator.
+All dependencies are managed by [Magix] which uses [Nix] underneath. No compilation is needed to run the generator.
 
 ## Pandoc-Based Rendering
 
@@ -68,4 +68,5 @@ Everything lives in `blog.hs`, organized into labeled sections. Extend `blog.hs`
 
 [Shake]: https://shakebuild.com/
 [Pandoc]: https://pandoc.org/
+[Magix]: https://github.com/dschrempf/magix
 [Nix]: https://nixos.org/

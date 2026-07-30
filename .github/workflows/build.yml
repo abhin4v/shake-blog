@@ -17,6 +17,19 @@ jobs:
 
       - name: install Nix
         uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          extra-conf: |
+            extra-substituters = https://dschrempf-magix.cachix.org
+            extra-trusted-public-keys = dschrempf-magix.cachix.org-1:cScG6NjZBiQvY7KjSPpQdUa9UXZVLz9rvUZHtuwdYwc=
+
+      - name: cache magix build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/magix
+          key: magix-${{ hashFiles('blog.hs') }}
+
+      - name: install magix
+        run: nix profile install github:dschrempf/magix
 
       - name: build site
         run: ENV=PROD ./blog.hs -j4 --color --digest build

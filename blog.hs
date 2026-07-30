@@ -1,6 +1,8 @@
-#! /usr/bin/env nix-shell
-#! nix-shell -p "haskellPackages.ghcWithPackages (p: [p.mustache p.pandoc p.shake p.feed p.yaml])"
-#! nix-shell -i "runhaskell --ghc-arg=-threaded"
+#!/usr/bin/env magix
+#!nixpkgs github:nixos/nixpkgs/nixpkgs-unstable
+#!magix haskell
+#!haskellPackages mustache pandoc shake feed yaml
+#!ghcFlags -threaded
 {-# LANGUAGE GHC2024 #-}
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}
