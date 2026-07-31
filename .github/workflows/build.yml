@@ -53,6 +53,22 @@ jobs:
         if: steps.cache-blog.outputs.cache-hit != 'true'
         run: ./scripts/magix-bundle.sh bundle blog.hs
 
+      - name: hash site inputs
+        id: site-hash
+        run: |
+          set -euo pipefail
+          TREE=$(git rev-parse "HEAD^{tree}")
+          echo "tree=$TREE" >> "$GITHUB_OUTPUT"
+
+      - name: cache site build
+        id: cache-site
+        uses: actions/cache@v4
+        with:
+          path: |
+            _site
+            .shake
+          key: site-${{ steps.site-hash.outputs.tree }}-${{ steps.nixpkgs.outputs.sha }}
+
       - name: build site
         run: ENV=PROD ./scripts/magix-bundle.sh run blog.hs -j4 --color --digest build
 
