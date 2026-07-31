@@ -1,8 +1,7 @@
 #!/usr/bin/env magix
-#!nixpkgs github:nixos/nixpkgs/nixpkgs-unstable
 #!magix haskell
 #!haskellPackages mustache pandoc shake feed yaml
-#!ghcFlags -threaded
+#!ghcFlags -threaded -O2
 {-# LANGUAGE GHC2024 #-}
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}

@@ -8,31 +8,53 @@ on:
 jobs:
   build:
     name: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    env:
+      NIXPKGS_BRANCH: release-26.05
     steps:
       - name: checkout
         uses: actions/checkout@v6
         with:
           ref: main
 
+      - name: resolve nixpkgs commit
+        id: nixpkgs
+        run: |
+          set -euo pipefail
+          SHA=$(git ls-remote https://github.com/NixOS/nixpkgs.git "refs/heads/$NIXPKGS_BRANCH" | cut -f1)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: cache blog bundle
+        id: cache-blog
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/magix-bundles
+          key: magix-bundles-${{ hashFiles('blog.hs') }}-${{ steps.nixpkgs.outputs.sha }}
+
       - name: install Nix
+        if: steps.cache-blog.outputs.cache-hit != 'true'
         uses: DeterminateSystems/nix-installer-action@v22
         with:
           extra-conf: |
             extra-substituters = https://dschrempf-magix.cachix.org
             extra-trusted-public-keys = dschrempf-magix.cachix.org-1:cScG6NjZBiQvY7KjSPpQdUa9UXZVLz9rvUZHtuwdYwc=
 
-      - name: cache magix build
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/magix
-          key: magix-${{ hashFiles('blog.hs') }}
-
       - name: install magix
+        if: steps.cache-blog.outputs.cache-hit != 'true'
         run: nix profile install github:dschrempf/magix
 
+      - name: compile blog
+        if: steps.cache-blog.outputs.cache-hit != 'true'
+        env:
+          MAGIX_NIXPKGS_REF: github:NixOS/nixpkgs/${{ steps.nixpkgs.outputs.sha }}
+        run: ./blog.hs
+
+      - name: create bundle
+        if: steps.cache-blog.outputs.cache-hit != 'true'
+        run: ./scripts/magix-bundle.sh bundle blog.hs
+
       - name: build site
-        run: ENV=PROD ./blog.hs -j4 --color --digest build
+        run: ENV=PROD ./scripts/magix-bundle.sh run blog.hs -j4 --color --digest build
 
       - name: check CNAME
         run: |
