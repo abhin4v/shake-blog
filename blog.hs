@@ -12,7 +12,8 @@
 
 module Main where
 
-import Control.Monad (when)
+import Control.Exception (IOException, try)
+import Control.Monad (unless, when)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Reader (ReaderT, ask, runReaderT)
 import Control.Monad.Trans (lift)
@@ -21,7 +22,7 @@ import Data.Aeson.Types qualified as A
 import Data.Function (on)
 import Data.Functor ((<&>))
 import Data.HashMap.Strict qualified as HM
-import Data.List (find, nub, nubBy, sortOn)
+import Data.List (find, nub, nubBy, sortOn, (\\))
 import Data.Maybe (fromMaybe)
 import Data.Ord qualified as Ord
 import Data.Text qualified as T
@@ -33,6 +34,8 @@ import Development.Shake (Action, Rules, (%>), (|%>), (~>))
 import Development.Shake qualified as Shake
 import Development.Shake.FilePath ((<.>), (</>))
 import Development.Shake.FilePath qualified as Shake
+import Development.Shake.Util qualified as Shake (shakeArgsPrune)
+import System.Directory (doesDirectoryExist, removeFile)
 import Text.Atom.Feed qualified as Atom
 import Text.Atom.Feed.Export qualified as Atom
 import Text.Mustache qualified as Mus
@@ -46,13 +49,13 @@ main :: IO ()
 main = do
   config <- Yaml.decodeFileThrow "config.yaml"
   when (null config.authors) $ do
-    error $ "There should be at least one author"
+    error "There should be at least one author"
 
   templateCache <- newTemplateCache
   postCache <- newPostCache config
   let ctx = Context config templateCache postCache
 
-  Shake.shakeArgs Shake.shakeOptions $ do
+  Shake.shakeArgsPrune Shake.shakeOptions pruneStaleFiles $ do
     Shake.withTargetDocs "Build the site" $
       "build" ~> runRAction ctx buildTargets
     Shake.withTargetDocs "Clean the built site" $
@@ -456,6 +459,30 @@ writeFile :: FilePath -> T.Text -> Action ()
 writeFile fp content = do
   Shake.liftIO $ TU.writeFile fp content
   Shake.trackWrite [fp]
+
+-- Delete generated files in the output directory that are no longer part of the build.
+pruneStaleFiles :: [FilePath] -> IO ()
+pruneStaleFiles live = do
+  exists <- doesDirectoryExist outputDir
+  present <-
+    if exists
+      then map prependOutputDir <$> Shake.getDirectoryFilesIO outputDir ["//*"]
+      else pure []
+  let stale = filter (`notElem` keep) $ present \\ live
+  unless (null stale) $ do
+    putStrLn $ "Pruning " <> show (length stale) <> " stale file(s):"
+    mapM_ pruneFile stale
+  where
+    -- The workflow copies CNAME and adds .nojekyll to _site after the build, so they
+    -- may be present in _site even though Shake does not track them.
+    keep = map prependOutputDir ["CNAME", ".nojekyll"]
+
+    pruneFile f = do
+      putStrLn ("  " <> f)
+      result <- try (removeFile f) :: IO (Either IOException ())
+      case result of
+        Left err -> putStrLn ("  warning: could not remove " <> f <> ": " <> show err)
+        Right () -> pure ()
 
 -- Pandoc utils
 

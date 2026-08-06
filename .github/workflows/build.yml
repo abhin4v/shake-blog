@@ -26,7 +26,7 @@ jobs:
 
       - name: cache blog bundle
         id: cache-blog
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/magix-bundles
           key: magix-bundles-${{ hashFiles('blog.hs') }}-${{ steps.nixpkgs.outputs.sha }}
@@ -53,24 +53,18 @@ jobs:
         if: steps.cache-blog.outputs.cache-hit != 'true'
         run: ./scripts/magix-bundle.sh bundle blog.hs
 
-      - name: hash site inputs
-        id: site-hash
-        run: |
-          set -euo pipefail
-          TREE=$(git rev-parse "HEAD^{tree}")
-          echo "tree=$TREE" >> "$GITHUB_OUTPUT"
-
-      - name: cache site build
+      - name: restore site build cache
         id: cache-site
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             _site
             .shake
-          key: site-${{ steps.site-hash.outputs.tree }}-${{ steps.nixpkgs.outputs.sha }}
+          key: site-build-${{ steps.nixpkgs.outputs.sha }}-${{ hashFiles('posts/**', 'templates/**', 'css/**', 'images/**', 'config.yaml', 'blog.hs') }}
+          restore-keys: site-build-${{ steps.nixpkgs.outputs.sha }}-
 
       - name: build site
-        run: ENV=PROD ./scripts/magix-bundle.sh run blog.hs -j4 --color --digest build
+        run: ENV=PROD ./scripts/magix-bundle.sh run blog.hs -j4 --color --digest --prune build
 
       - name: check CNAME
         run: |
@@ -87,6 +81,15 @@ jobs:
 
       - name: add .nojekyll
         run: touch _site/.nojekyll
+
+      - name: save site build cache
+        if: steps.cache-site.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            _site
+            .shake
+          key: site-build-${{ steps.nixpkgs.outputs.sha }}-${{ hashFiles('posts/**', 'templates/**', 'css/**', 'images/**', 'config.yaml', 'blog.hs') }}
 
       - name: publish
         uses: crazy-max/ghaction-github-pages@v4
