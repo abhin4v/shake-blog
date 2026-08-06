@@ -51,3 +51,5 @@ On every push, the workflow:
 5. Caches the script bundle and the built site for later builds.
 
 On later runs the caches hit, so step 3 is skipped and only the site is rebuilt. Because of [Shake](https://shakebuild.com)'s incremental builds, only the changed parts of the site are built.
+
+The build is invoked with `--prune`, which tells Shake to delete any file in `_site/` that the current sources no longer generate.

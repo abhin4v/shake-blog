@@ -66,6 +66,43 @@ The included GitHub Actions workflow builds the site with `ENV=PROD` and publish
 
 Everything lives in `blog.hs`, organized into labeled sections. Extend `blog.hs` to add any functionality you want to your website. The full Shake API is available to you.
 
+## Common Shake Flags
+
+Since BlogShake is a Shake build script, the standard [Shake] command-line flags work out of the box. Run `./blog.hs --help` to see the full list. The common ones are:
+
+`-j N`, `--jobs=N`
+: Build with `N` threads in parallel (default: one per CPU).
+
+`--digest`
+: Rebuild files when their content changes, not just their modification time. More robust on systems that touch files without changing them, and it is what the CI workflow uses.
+
+`--color`
+: Colorize the output.
+`-q`, `--quiet`
+: Print less; pass it again for even less.
+
+`-p[N]`, `--progress[=N]`
+: Show a progress line every `N` seconds (default 5).
+
+`-k`, `--keep-going`
+: Keep building the remaining targets even if some fail.
+
+`-B`, `--rebuild`
+: Force rebuild files even if nothing has changed.
+
+`-r`, `--report`
+: Write a profiling report to `report.html`.
+
+`--prune`
+: After a successful build, delete generated files that the current sources no longer produce. Used in CI to keep the published site in sync when posts or tags are removed
+
+Examples:
+
+```sh
+./blog.hs -j4 --color build
+./blog.hs -j4 --color --digest --prune build # what CI does
+```
+
 [Shake]: https://shakebuild.com/
 [Pandoc]: https://pandoc.org/
 [Magix]: https://github.com/dschrempf/magix
