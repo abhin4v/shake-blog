@@ -92,7 +92,7 @@ jobs:
           key: site-build-${{ steps.nixpkgs.outputs.sha }}-${{ hashFiles('posts/**', 'templates/**', 'css/**', 'images/**', 'config.yaml', 'blog.hs') }}
 
       - name: publish
-        uses: crazy-max/ghaction-github-pages@v4
+        uses: crazy-max/ghaction-github-pages@v5
         with:
           target_branch: gh-pages
           build_dir: _site
