@@ -13,7 +13,19 @@ This post explains how it works and how to use it.
 
 ## Prerequisites
 
-BlogShake uses [Nix](https://nixos.org/) to download the dependencies. 
+BlogShake is run with [Magix](https://github.com/dschrempf/magix), which provisions the dependencies with [Nix](https://nixos.org) underneath and compiles the script into a binary the first time you run it, caching the result. You need Nix installed, then Magix:
+
+```sh
+nix profile install github:dschrempf/magix
+```
+
+If you'd rather not install Magix, you can run it directly:
+
+```sh
+nix run github:dschrempf/magix#magix -- ./blog.hs build
+```
+
+Once Magix is set up, the script runs directly as shown below. 
 
 ## Quickstart
 

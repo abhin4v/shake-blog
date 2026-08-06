@@ -39,3 +39,15 @@ After the first successful Action run has created the `gh-pages` branch:
    the public URL, e.g. `https://<you>.github.io/<repo>/`.
 
 If you use a custom domain, add a `CNAME` file to the repo root containing your domain (the workflow copies it into `_site/` so it lands at the root of the `gh-pages` branch), and configure the domain under **Settings > Pages > Custom domain**. Without the `CNAME` file in the published branch, GitHub clears the custom-domain setting on every deploy. Update the `url` config in `config.yaml` to match your custom URL.
+
+## How it works
+
+On every push, the workflow:
+
+1. Resolves a specific [Nixpkgs](https://github.com/NixOS/nixpkgs/) release commit so that the build is reproducible and cacheable.
+2. Restores two caches: the [Magix](https://github.com/dschrempf/magix)-compiled script bundle, and the previously built site.
+3. On the script bundle cache miss only, installs Nix and Magix, compiles the build script into a binary, and packages it into a bundle.
+4. Builds the site with `ENV=PROD` and publishes the output `_site/` directory to the `gh-pages` branch.
+5. Caches the script bundle and the built site for later builds.
+
+On later runs the caches hit, so step 3 is skipped and only the site is rebuilt. Because of [Shake](https://shakebuild.com)'s incremental builds, only the changed parts of the site are built.
