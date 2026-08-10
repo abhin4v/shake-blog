@@ -39,23 +39,24 @@
 #
 # Solution
 # --------
-# Copy the binary and the C libraries it links against into a bundle keyed by
-# a SHA-256 of the script contents, and rewrite the binary's library search
-# path to the lib/ directory next to it with `patchelf --set-rpath
-# '$ORIGIN/lib'`, so the loader finds them at run time without LD_LIBRARY_PATH
-# or the Nix store. glibc is deliberately not bundled, since its version must
-# match the host's.
+# Copy the binary and the transitive closure of the Nix-store C libraries it
+# links against into a bundle keyed by a SHA-256 of the script contents, and
+# rewrite the library search paths with `patchelf --set-rpath`: the binary to
+# '$ORIGIN/lib' and each bundled library to '$ORIGIN', so the loader finds
+# them at run time without LD_LIBRARY_PATH or the Nix store. glibc and other
+# system libraries are deliberately not bundled, since their versions must
+# match the host's; the loader resolves them from the system search path.
 #
 # Implementation
 # --------------
 # 'bundle' resolves Magix's cache directory, picks the newest result symlink
 # for the script (skipping dangling ones) or fails with a clear error,
-# dereferences it to the Nix store path, copies the binary and the C libraries
-# it links against into the bundle, and rewrites the binary's rpath. 'run'
-# computes the same SHA-256, checks the bundle exists, and execs the binary,
-# passing through any arguments. The bundle lives at
-# $MAGIX_BUNDLE_DIR/<sha256 of script>/bin/<name> with the C libraries in
-# lib/; MAGIX_BUNDLE_DIR defaults to ~/.cache/magix-bundles.
+# dereferences it to the Nix store path, copies the binary, and recursively
+# copies the transitive closure of its Nix-store C library dependencies,
+# rewriting each copied library's rpath to '$ORIGIN'. 'run' computes the same
+# SHA-256, checks the bundle exists, and execs the binary, passing through any
+# arguments. The bundle lives at $MAGIX_BUNDLE_DIR/<sha256 of script>/bin/<name>
+# with the C libraries in lib/; MAGIX_BUNDLE_DIR defaults to ~/.cache/magix-bundles.
 #
 # Note
 # ----
@@ -92,6 +93,30 @@ HASH=$(sha256sum "$SCRIPT_FILE" | awk '{print $1}')
 MAGIX_CACHE="${MAGIX_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/magix}"
 DEST="${MAGIX_BUNDLE_DIR:-$HOME/.cache/magix-bundles}/$HASH"
 
+# Copy the transitive closure of the binary's Nix-store C library
+# dependencies into the bundle. System libraries (glibc and friends) are
+# never bundled: they must resolve against the host's, so they are skipped
+# here and found by the loader from the system search path at run time.
+copy_lib_deps() {
+  local src="$1"
+  local deps dep base
+  deps=$(ldd "$src" | awk '/\/nix\/store\//{print $3}')
+  for dep in $deps; do
+    case "$dep" in
+      */*-glibc-*/*) continue ;;
+    esac
+    [ -e "$dep" ] || {
+      echo "error: dependency '$dep' of '$src' not found" >&2
+      exit 1
+    }
+    base=$(basename "$dep")
+    if [ ! -f "$DEST/lib/$base" ]; then
+      cp -L "$dep" "$DEST/lib/$base"
+      copy_lib_deps "$dep"
+    fi
+  done
+}
+
 bundle() {
   mkdir -p "$DEST/bin" "$DEST/lib"
 
@@ -112,17 +137,7 @@ bundle() {
   cp "$BIN" "$DEST/bin/$NAME"
   chmod +w "$DEST/bin/$NAME"
 
-  DEPS=$(ldd "$BIN" | awk '/\/nix\/store\//{print $3}')
-  for dep in $DEPS; do
-    case "$dep" in
-      */glibc-*/*) continue ;;
-    esac
-    [ -e "$dep" ] || {
-      echo "error: dependency '$dep' of '$BIN' not found" >&2
-      exit 1
-    }
-    cp -L "$dep" "$DEST/lib/"
-  done
+  copy_lib_deps "$BIN"
 
   case "$(uname -m)" in
     x86_64)
@@ -141,6 +156,11 @@ bundle() {
     --set-interpreter "$INTERPRETER" \
     --set-rpath "\$ORIGIN/lib" \
     "$DEST/bin/$NAME"
+  for lib in "$DEST"/lib/*; do
+    [ -f "$lib" ] || continue
+    chmod +w "$lib"
+    patchelf --set-rpath "\$ORIGIN" "$lib"
+  done
   echo "bundle created at $DEST"
 }
 
