@@ -79,6 +79,41 @@ Enhanced with light-dark() support for automatic dark mode and blog specific CSS
   --code-er-td: light-dark(none, none);
 }
 
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+dialog:modal {
+    max-inline-size: calc(100% - 2em);
+    max-block-size: calc(100% - 2em);
+}
+
+audio, canvas, embed, iframe, img, input[type="image"], object, video, svg {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+}
+
+blockquote, figure, dd {
+    margin-inline: 4ch;
+}
+
+h1, h2, h3, h4, h5, h6, hgroup, summary, dt, th, caption {
+    text-wrap: balance;
+}
+
+p, li, dd, blockquote, figcaption {
+    text-wrap: pretty;
+}
+
+hgroup p {
+    font-weight: bold;
+}
+
+textarea {
+    resize: vertical;
+}
+
 /* Base body styles */
 body {
   background-color: var(--bg-color);
@@ -93,6 +128,10 @@ body {
   transition:
     color 0.2s,
     background-color 0.2s;
+}
+
+body main {
+  min-block-size: 80svb;
 }
 
 /* Headings */
@@ -383,6 +422,7 @@ ul.tags li {
 
 .feed-icon > svg {
   margin-bottom: -1.1em;
+  display: inline;
 }
 
 main.home .feed-icon > svg {
