@@ -32,7 +32,7 @@ import Data.Text.IO.Utf8 qualified as TU
 import Data.Text.Lazy qualified as TL
 import Data.Time (UTCTime, defaultTimeLocale, formatTime, parseTimeM)
 import Data.Yaml qualified as Yaml
-import Development.Shake (Action, Rules, (%>), (|%>), (~>))
+import Development.Shake (Action, Rules, (%>), (&%>), (|%>), (~>))
 import Development.Shake qualified as Shake
 import Development.Shake.FilePath ((<.>), (</>))
 import Development.Shake.FilePath qualified as Shake
@@ -394,17 +394,18 @@ postFeedRules =
       >>= traverse mkPostEntry
       >>= writeFeed
         (ctx.config.url <> "/" <> T.pack feedFileName)
+        ctx.config.url
         ctx.config.title
         target
 
 archiveRules :: RRules ()
 archiveRules =
   (archivePath </> "index.html") @> \target ->
-    getPosts >>= writeArchive (T.pack "Archive") target
+    getPosts >>= writeArchive (T.pack "Archive") Nothing target
 
 -- | Writes an archive page with the given title and posts.
-writeArchive :: T.Text -> FilePath -> [Post] -> RAction ()
-writeArchive title target posts = do
+writeArchive :: T.Text -> Maybe T.Text -> FilePath -> [Post] -> RAction ()
+writeArchive title tag target posts = do
   ctx <- ask
   baseUrl <- getBaseUrl ctx.config
   html <-
@@ -412,6 +413,7 @@ writeArchive title target posts = do
       A.object
         [ "title" .= title,
           "posts" .= posts,
+          "tag_path" .= (tag <&> \t -> tagArchivePath <> "/" <> T.unpack t),
           "base_url" .= baseUrl,
           "site" .= ctx.config
         ]
@@ -426,7 +428,7 @@ tagArchiveRules =
     let tag = T.pack $ Shake.splitDirectories target !! 2
     getPosts
       <&> filter (\post -> tag `elem` post.tags)
-      >>= writeArchive (T.pack "Posts tagged “" <> tag <> T.pack "”") target
+      >>= writeArchive (T.pack "Posts tagged “" <> tag <> T.pack "”") Nothing target
 
 homeRules :: RRules ()
 homeRules =
@@ -468,15 +470,23 @@ getDirFiles = liftAction . Shake.getDirectoryFiles ""
 forP :: (MonadAction m) => [a] -> (a -> Action b) -> m [b]
 forP xs = liftAction . Shake.forP xs
 
+-- | Registers a handler for outputs matching all of the patterns.
+(&@>) :: [Shake.FilePattern] -> ([FilePath] -> RAction ()) -> RRules ()
+filePatterns &@> f = do
+  ctx <- ask
+  lift $
+    -- Shake passes handlers the target path, including outputDir.
+    map prependOutputDir filePatterns &%> \targets ->
+      -- Every output depends on the script and config, so editing either
+      -- rebuilds the site.
+      Shake.need ["blog.hs", "config.yaml"] >> runRAction ctx (f targets)
+
 -- | Registers a handler for output matching any of the patterns.
 (|@>) :: [Shake.FilePattern] -> (FilePath -> RAction ()) -> RRules ()
 filePatterns |@> f = do
   ctx <- ask
   lift $
-    -- Shake passes handlers the target path, including outputDir.
     map prependOutputDir filePatterns |%> \target ->
-      -- Every output depends on the script and config, so editing either
-      -- rebuilds the site.
       Shake.need ["blog.hs", "config.yaml"] >> runRAction ctx (f target)
 
 -- | Registers a handler for one output pattern.
@@ -484,10 +494,7 @@ filePatterns |@> f = do
 fp @> f = do
   ctx <- ask
   lift $
-    -- Shake passes handlers the target path, including outputDir.
     prependOutputDir fp %> \target ->
-      -- Every output depends on the script and config, so editing either
-      -- rebuilds the site.
       Shake.need ["blog.hs", "config.yaml"] >> runRAction ctx (f target)
 
 -- | Maps a source path to its clean-URL output path.
@@ -501,6 +508,9 @@ indexHtmlSourcePath =
     . (<.> "md")
     . Shake.dropTrailingPathSeparator
     . Shake.dropFileName
+
+feedFileOutputPath :: FilePath -> FilePath
+feedFileOutputPath srcPath = Shake.dropExtension srcPath </> feedFileName
 
 -- | Reads a UTF-8 file as a build input.
 readFile :: FilePath -> Action T.Text
@@ -681,8 +691,8 @@ mkPostEntry post@Post {..} = do
       }
 
 -- | Builds an Atom feed from its entries.
-mkFeed :: Atom.URI -> T.Text -> SiteConfig -> [Atom.Entry] -> Atom.Feed
-mkFeed feedUrl title config entries =
+mkFeed :: Atom.URI -> Atom.URI -> T.Text -> SiteConfig -> [Atom.Entry] -> Atom.Feed
+mkFeed feedUrl feedHtmlUrl title config entries =
   let author = head config.authors
    in Atom.Feed
         { feedId = feedUrl,
@@ -694,7 +704,7 @@ mkFeed feedUrl title config entries =
           feedContributors = [],
           feedGenerator = Nothing,
           feedIcon = Nothing,
-          feedLinks = [(Atom.nullLink feedUrl) {Atom.linkRel = Just $ Left "self"}, Atom.nullLink config.url],
+          feedLinks = [(Atom.nullLink feedUrl) {Atom.linkRel = Just $ Left "self"}, Atom.nullLink feedHtmlUrl],
           feedLogo = Nothing,
           feedRights = Just $ Atom.TextString $ "© " <> author.copyrightYear <> ", " <> author.name,
           feedSubtitle = Nothing,
@@ -703,10 +713,10 @@ mkFeed feedUrl title config entries =
           feedOther = []
         }
 
-writeFeed :: Atom.URI -> T.Text -> String -> [Atom.Entry] -> RAction ()
-writeFeed feedUrl title out entries = do
+writeFeed :: Atom.URI -> Atom.URI -> T.Text -> String -> [Atom.Entry] -> RAction ()
+writeFeed feedUrl feedHtmlUrl title out entries = do
   ctx <- ask
-  lift $ case Atom.textFeed (mkFeed feedUrl title ctx.config entries) of
+  lift $ case Atom.textFeed (mkFeed feedUrl feedHtmlUrl title ctx.config entries) of
     Nothing -> fail "Unable to create feed"
     Just content -> do
       writeFile out $ TL.toStrict content
