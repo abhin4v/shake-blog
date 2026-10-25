@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="language" content="EN" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>BlogShake — Extending BlogShake with Per-Tag Atom Feeds</title>
+    <meta name="description" content="An example blog build on BlogShake." />
+    <meta name="author" content="Abhinav Sarkar" />
+    <meta name="copyright" content="Abhinav Sarkar 2026" />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:url" content="https://abhin4v.github.io/shake-blog" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="BlogShake — Extending BlogShake with Per-Tag Atom Feeds" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="BlogShake" />
+    <meta property="og:description" content="An example blog build on BlogShake." />
+
+    <link rel="stylesheet" type="text/css" href="https://abhin4v.github.io/shake-blog/css/default.css" />
+    <link rel="me" href="https://abhinavsarkar.net/about/" type="text/html" />
+    <link rel="author" href="https://abhinavsarkar.net/about/" type="text/html" />
+    <link rel="alternate" type="application/atom+xml" title="Feed" href="https://abhin4v.github.io/shake-blog/feed.atom" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="https://abhin4v.github.io/shake-blog/" style="font-weight: bold">BlogShake</a>
+        <a href="https://abhin4v.github.io/shake-blog/archive/">Archive</a>
+        <a href="https://abhin4v.github.io/shake-blog/contact/">Contact</a>
+      </nav>
+    </header>
+    <main class="post">
+      <h1>Extending BlogShake with Per-Tag Atom Feeds</h1>
+
+<div class="post-info">
+  <p>
+    Posted on <time datetime="2026-10-25T00:00:00Z">October 25, 2026</time>
+    
+  </p>
+  <ul class="tags">
+    <li><a href="https://abhin4v.github.io/shake-blog/tags/shake/">shake</a></li>
+    <li><a href="https://abhin4v.github.io/shake-blog/tags/guide/">guide</a></li>
+    <li><a href="https://abhin4v.github.io/shake-blog/tags/haskell/">haskell</a></li>
+  </ul>
+</div>
+<p><a href="https://github.com/abhin4v/shake-blog">BlogShake</a> is a
+minimal static site generator (SSG) built upon the <a
+href="https://shakebuild.com/">Shake</a> build system. It is extensible,
+but not in the usual way. Unlike most of SSGs, it has no plugin system.
+Instead, the users are expected to read and modify BlogShake code. Since
+it builds upon the solid foundation of Shake and <a
+href="https://pandoc.org/">Pandoc</a>, it is actually easy to extend in
+many possible directions. In this post, we walk through one such change:
+giving each tag its own Atom feed.</p>
+<p>The current code already generates tag archive pages at
+<code>/tags/&lt;tag&gt;/</code> and a global feed at
+<code>/feed.atom</code>. We now want to generate
+<code>/tags/&lt;tag&gt;/feed.atom</code> to contain the same posts as
+the tag’s archive. We already have the supporting pieces in
+<code>blog.hs</code>, we just have to bring them together.</p>
+<h2 id="the-current-tagarchiverules">The Current
+<code>tagArchiveRules</code></h2>
+<p>Here is the tag archive rule before the feed support exists:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Writes one archive page per tag.</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ot">tagArchiveRules ::</span> <span class="dt">RRules</span> ()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>tagArchiveRules <span class="ot">=</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  (tagArchivePath <span class="op">&lt;/&gt;</span> <span class="st">&quot;*/index.html&quot;</span>) <span class="op">@&gt;</span> \target <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- The tag is the path segment after tags/.</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> tag <span class="ot">=</span> T.pack <span class="op">$</span> Shake.splitDirectories target <span class="op">!!</span> <span class="dv">2</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    getPosts</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      <span class="op">&lt;&amp;&gt;</span> <span class="fu">filter</span> (\post <span class="ot">-&gt;</span> tag <span class="ot">`elem`</span> post<span class="op">.</span>tags)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>      <span class="op">&gt;&gt;=</span> writeArchive</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        (T.pack <span class="st">&quot;Posts tagged “&quot;</span> <span class="op">&lt;&gt;</span> tag <span class="op">&lt;&gt;</span> T.pack <span class="st">&quot;”&quot;</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="dt">Nothing</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        target</span></code></pre></div>
+<p><code>tagArchiveRules</code> uses <code
+class="sourceCode haskell hs"><span class="op">@&gt;</span></code>,
+which crates a rule with one output. Shake matches the given pattern
+<code>tags/*/index.html</code> and calls the given action. In the action
+we extract the tag from the path, filter all posts by that tag, and use
+<code>writeArchive</code> to render and write the archive HTML file.</p>
+<h2 id="evolving-tagarchiverules">Evolving
+<code>tagArchiveRules</code></h2>
+<p>A tag’s feed should contain the same posts as shown on the tag’s
+archive page. We could add a separate rule for the
+<code>tags/*/feed.atom</code> pattern, but then we would have to filter
+the posts twice, wasting computation. Shake has a better fit for this
+case: the <code
+class="sourceCode haskell hs"><span class="op">&amp;%&gt;</span></code>
+rule operator that builds a group of outputs with one action. The <code
+class="sourceCode haskell hs"><span class="op">&amp;@&gt;</span></code>
+operator in BlogShake wraps it.</p>
+<p>We change only the <code>tagArchiveRules</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Writes one archive page and one Atom feed per tag.</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ot">tagArchiveRules ::</span> <span class="dt">RRules</span> ()</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>tagArchiveRules <span class="ot">=</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  (<span class="fu">map</span> (\f <span class="ot">-&gt;</span> tagArchivePath <span class="op">&lt;/&gt;</span> <span class="st">&quot;*&quot;</span> <span class="op">&lt;/&gt;</span> f) [<span class="st">&quot;index.html&quot;</span>, feedFileName])</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">&amp;@&gt;</span> \[htmlTarget, atomTarget] <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- The tag is the path segment after tags/.</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> tag <span class="ot">=</span> T.pack <span class="op">$</span> Shake.splitDirectories htmlTarget <span class="op">!!</span> <span class="dv">2</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>          title <span class="ot">=</span> T.pack <span class="st">&quot;Posts tagged “&quot;</span> <span class="op">&lt;&gt;</span> tag <span class="op">&lt;&gt;</span> T.pack <span class="st">&quot;”&quot;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>          tagPath <span class="ot">=</span> tagArchivePath <span class="op">&lt;/&gt;</span> T.unpack tag</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>      ctx <span class="ot">&lt;-</span> ask</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>      taggedPosts <span class="ot">&lt;-</span> <span class="fu">filter</span> (\post <span class="ot">-&gt;</span> tag <span class="ot">`elem`</span> post<span class="op">.</span>tags) <span class="op">&lt;$&gt;</span> getPosts</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- Write the HTML file</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>      writeArchive title (<span class="dt">Just</span> tag) htmlTarget taggedPosts</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- Write the Atom file</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>      <span class="fu">traverse</span> mkPostEntry taggedPosts</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">&gt;&gt;=</span> writeFeed</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>          (ctx<span class="op">.</span>config<span class="op">.</span>url <span class="op">&lt;&gt;</span> <span class="st">&quot;/&quot;</span> <span class="op">&lt;&gt;</span> T.pack (feedFileOutputPath tagPath))</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>          (ctx<span class="op">.</span>config<span class="op">.</span>url <span class="op">&lt;&gt;</span> <span class="st">&quot;/&quot;</span> <span class="op">&lt;&gt;</span> T.pack tagPath <span class="op">&lt;&gt;</span> <span class="st">&quot;/&quot;</span>)</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>          (ctx<span class="op">.</span>config<span class="op">.</span>title <span class="op">&lt;&gt;</span> <span class="st">&quot; — &quot;</span> <span class="op">&lt;&gt;</span> title)</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>          atomTarget</span></code></pre></div>
+<p>The rule now lists both the <code>tags/*/index.html</code> and
+<code>tags/*/feed.atom</code> patterns, and <code
+class="sourceCode haskell hs"><span class="op">&amp;@&gt;</span></code>
+registers a single handler action for the group that receives both paths
+at once. We extract the tag from <code>htmlTarget</code>, from which we
+build <code>tagPath</code> (for example <code>tags/haskell</code>).
+Unlike <code>htmlTarget</code>, <code>tagPath</code> does not include
+the <code>_site</code> output prefix, so we can use it directly in URLs
+in the final feed.</p>
+<p>We compute <code>taggedPosts</code> once and reuse it for both HTML
+and Atom. <code>writeArchive</code> writes the HTML,
+<code>mkPostEntry</code> converts the posts to Atom entries, and
+<code>writeFeed</code> writes the feed. We pass <code
+class="sourceCode haskell hs"><span class="dt">Just</span> tag</code> to
+<code>writeArchive</code> so the archive template can point its feed
+icon at the tag feed. We build the feed URL and feed HTML URL using
+<code
+class="sourceCode haskell hs">config<span class="op">.</span>url</code>
+because they need to be absolute. The feed title is the site title plus
+the tag archive title.</p>
+<h2 id="how-this-works">How This Works</h2>
+<p><code>buildTargets</code> only includes the HTML archive for each
+tag. Because <code
+class="sourceCode haskell hs"><span class="op">&amp;@&gt;</span></code>
+registers both patterns as one output group, needing the HTML target
+builds the feed target too. We do not have to list the feed targets
+separately.</p>
+<p><code>writeArchive</code> already accepts a <code
+class="sourceCode haskell hs"><span class="dt">Maybe</span> tag</code>
+and exposes a <code>tag_path</code> value to the
+<code>archive.html</code> template. The template uses that value to
+choose the feed link, pointing to either the global feed or a tag-wise
+feed.</p>
+<h2 id="build-and-verify">Build and Verify</h2>
+<p>Run:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./blog.hs</span> build</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> _site/tags/haskell/</span></code></pre></div>
+<p>We should see both <code>feed.atom</code> and
+<code>index.html</code>.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Our change is small because it builds upon the existing
+infrastructure of Shake and BlogShake. We changed one rule to produce
+two outputs from list of tagged posts, reusing the existing archive and
+feed helpers. This is how users are supposed to extend BlogShake instead
+of relying on a plugin system.</p>
+
+    </main>
+    <footer>
+      Built with <a href="https://shakebuild.com">Shake</a> and
+      <a href="https://haskell.org">Haskell</a>
+    </footer>
+  </body>
+</html>
