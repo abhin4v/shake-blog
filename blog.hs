@@ -10,6 +10,8 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wall -Wno-x-partial #-}
 
+-- | The build graph is in 'buildTargets' (what to produce) and 'buildRules'
+-- (how to produce it); new page types can follow one of the existing groups.
 module Main where
 
 import Control.Exception (IOException, try)
@@ -48,6 +50,7 @@ import Prelude hiding (readFile, writeFile)
 main :: IO ()
 main = do
   config <- Yaml.decodeFileThrow "config.yaml"
+  -- The feed and templates assume there is a first author.
   when (null config.authors) $ do
     error "There should be at least one author"
 
@@ -61,9 +64,13 @@ main = do
     Shake.withTargetDocs "Clean the built site" $
       "clean" ~> Shake.removeFilesAfter outputDir ["//*"]
 
+    -- These rules are hidden from the command-line target list (and --help),
+    -- but are still used internally when the build target needs their outputs.
     Shake.withoutTargets $ runRRules ctx buildRules
 
 -- Settings
+--
+-- Paths are relative to the project root, where @./blog.hs@ is run.
 
 outputDir :: FilePath
 outputDir = "_site"
@@ -90,6 +97,9 @@ feedFileName :: String
 feedFileName = "feed.atom"
 
 -- Config
+--
+-- These types are both parsed from @config.yaml@ ('FromJSON') and exposed to
+-- templates as the @site@ value ('ToJSON').
 
 data AuthorConfig = AuthorConfig
   { name :: T.Text,
@@ -101,8 +111,10 @@ data AuthorConfig = AuthorConfig
 
 data SiteConfig = SiteConfig
   { title :: T.Text,
+    -- | Absolute URL, without a trailing slash.
     url :: T.Text,
     description :: T.Text,
+    -- | At least one is required.
     authors :: [AuthorConfig]
   }
   deriving (Show)
@@ -122,6 +134,8 @@ instance ToJSON SiteConfig where
       [ "title" .= title,
         "url" .= url,
         "description" .= description,
+        -- This is a convenience alias for templates; all authors are also in
+        -- "authors".
         "author" .= head authors,
         "authors" .= authors
       ]
@@ -143,9 +157,14 @@ instance FromJSON SiteConfig where
       <*> o A..: "authors"
 
 -- Shake
+--
+-- Shake selects a rule by the output path it builds, so config and caches
+-- cannot be passed as rule arguments. They travel in this Reader instead.
 
+-- | Several rules need the same post, so each file is parsed once per run.
 type PostCache = FilePath -> Action Post
 
+-- | Compiled templates are cached per run, including their partials.
 type TemplateCache = FilePath -> Action Mus.Template
 
 data Context = Context
@@ -175,22 +194,27 @@ runRRules = flip runReaderT
 
 -- Build
 
+-- | Builds the complete site.
 buildTargets :: RAction ()
 buildTargets = do
   assetPaths <- getDirFiles assetGlobs
   postPaths <- getDirFiles postGlobs
 
+  -- Add outputs for any new page type here.
   need assetPaths
   need $ map indexHtmlOutputPath pagePaths
   need $ map indexHtmlOutputPath postPaths
   need [feedFileName, archivePath </> "index.html", "index.html"]
 
+  -- Tags are only known after reading the posts, so this comes last.
   ctx <- ask
   posts <- forP postPaths $ getPost ctx.postCache
   need [indexHtmlOutputPath $ tagArchivePath </> T.unpack tag | post <- posts, tag <- post.tags]
 
+-- | Registers all rule groups.
 buildRules :: RRules ()
 buildRules = do
+  -- Order is irrelevant: Shake matches rule groups by output pattern.
   assetRules
   pageRules
   postRules
@@ -201,8 +225,10 @@ buildRules = do
 
 -- Assets
 
+-- | Copies static assets into the output directory.
 assetRules :: RRules ()
 assetRules =
+  -- New asset types only need an entry in assetGlobs.
   assetGlobs |@> \target -> do
     let src = Shake.dropDirectory1 target
     copyFileChanged src target
@@ -242,6 +268,7 @@ mkPage title mainClass content = do
   baseUrl <- getBaseUrl ctx.config
   pure $ Page {config = ctx.config, ..}
 
+-- | Renders the standalone pages listed in 'pagePaths'.
 pageRules :: RRules ()
 pageRules =
   map indexHtmlOutputPath pagePaths |@> \target -> do
@@ -250,12 +277,14 @@ pageRules =
     baseUrl <- getBaseUrl ctx.config
     (meta, html) <- markdownToHtml baseUrl src
 
+    -- Pages have no date, tags, or author; only the front-matter title is used.
     mkPage (meta HM.! ("title" :: T.Text)) "page" html
       >>= applyTemplateAndWrite "default.html" target
     putInfo $ "Built " <> target <> " from " <> src
 
 -- Posts
 
+-- | A post's YAML front matter; @author@ and @tags@ are optional.
 data PostMeta = PostMeta
   { title :: T.Text,
     author :: Maybe T.Text,
@@ -278,6 +307,7 @@ instance ToJSON PostMeta where
         "tags" .= tags
       ]
 
+-- | A rendered post with metadata derived from its filename and config.
 data Post = Post
   { title :: T.Text,
     author :: Maybe T.Text,
@@ -285,6 +315,7 @@ data Post = Post
     date :: T.Text,
     dateTime :: UTCTime,
     content :: T.Text,
+    -- | Absolute in PROD, root-relative in DEV.
     url :: T.Text,
     baseUrl :: T.Text,
     config :: SiteConfig
@@ -305,8 +336,11 @@ instance ToJSON Post where
         "site" .= config
       ]
 
+-- | Reads and renders one post.
 readPost :: (MonadAction m) => SiteConfig -> FilePath -> m Post
 readPost config postPath = do
+  -- The date is the first ten filename characters, so month and day must be
+  -- zero-padded.
   dateTime <-
     parseTimeM False defaultTimeLocale "%Y-%-m-%-d"
       . take 10
@@ -330,10 +364,12 @@ newPostCache = Shake.newCacheIO . readPost
 getPost :: (MonadAction m) => PostCache -> FilePath -> m Post
 getPost postCache = liftAction . postCache
 
+-- | Returns all posts sorted by display date, descending.
 getPosts :: RAction [Post]
 getPosts = do
   ctx <- ask
   postPaths <- getDirFiles postGlobs
+  -- Use dateTime here for exact chronological order across months.
   sortOn (Ord.Down . date) <$> traverse (getPost ctx.postCache) postPaths
 
 postRules :: RRules ()
@@ -348,10 +384,12 @@ postRules =
       >>= applyTemplateAndWrite "default.html" target
     putInfo $ "Built " <> target <> " from " <> src
 
+-- | Writes the Atom feed.
 postFeedRules :: RRules ()
 postFeedRules =
   feedFileName @> \target -> do
     ctx <- ask
+    -- Feed entries need absolute URLs, so use config.url even in DEV.
     getPosts
       >>= traverse mkPostEntry
       >>= writeFeed
@@ -364,6 +402,7 @@ archiveRules =
   (archivePath </> "index.html") @> \target ->
     getPosts >>= writeArchive (T.pack "Archive") target
 
+-- | Writes an archive page with the given title and posts.
 writeArchive :: T.Text -> FilePath -> [Post] -> RAction ()
 writeArchive title target posts = do
   ctx <- ask
@@ -379,9 +418,11 @@ writeArchive title target posts = do
   mkPage title "archive" html >>= applyTemplateAndWrite "default.html" target
   putInfo $ "Built " <> target
 
+-- | Writes one archive page per tag.
 tagArchiveRules :: RRules ()
 tagArchiveRules =
   (tagArchivePath </> "*/index.html") @> \target -> do
+    -- The tag is the path segment after tags/.
     let tag = T.pack $ Shake.splitDirectories target !! 2
     getPosts
       <&> filter (\post -> tag `elem` post.tags)
@@ -406,6 +447,7 @@ homeRules =
 
 -- Shake utils
 
+-- | Prefixes an output-relative path with 'outputDir'.
 prependOutputDir :: FilePath -> FilePath
 prependOutputDir = (outputDir </>)
 
@@ -418,29 +460,41 @@ putInfo = liftAction . Shake.putInfo
 copyFileChanged :: (MonadAction m) => FilePath -> FilePath -> m ()
 copyFileChanged src dst = liftAction $ Shake.copyFileChanged src dst
 
+-- | Finds source files matching the globs. Returned paths are relative to the
+-- project root, not 'outputDir'.
 getDirFiles :: (MonadAction m) => [Shake.FilePattern] -> m [FilePath]
 getDirFiles = liftAction . Shake.getDirectoryFiles ""
 
 forP :: (MonadAction m) => [a] -> (a -> Action b) -> m [b]
 forP xs = liftAction . Shake.forP xs
 
+-- | Registers a handler for output matching any of the patterns.
 (|@>) :: [Shake.FilePattern] -> (FilePath -> RAction ()) -> RRules ()
 filePatterns |@> f = do
   ctx <- ask
   lift $
+    -- Shake passes handlers the target path, including outputDir.
     map prependOutputDir filePatterns |%> \target ->
+      -- Every output depends on the script and config, so editing either
+      -- rebuilds the site.
       Shake.need ["blog.hs", "config.yaml"] >> runRAction ctx (f target)
 
+-- | Registers a handler for one output pattern.
 (@>) :: Shake.FilePattern -> (FilePath -> RAction ()) -> RRules ()
 fp @> f = do
   ctx <- ask
   lift $
+    -- Shake passes handlers the target path, including outputDir.
     prependOutputDir fp %> \target ->
+      -- Every output depends on the script and config, so editing either
+      -- rebuilds the site.
       Shake.need ["blog.hs", "config.yaml"] >> runRAction ctx (f target)
 
+-- | Maps a source path to its clean-URL output path.
 indexHtmlOutputPath :: FilePath -> FilePath
 indexHtmlOutputPath srcPath = Shake.dropExtension srcPath </> "index.html"
 
+-- | Maps a clean-URL output path back to its source path.
 indexHtmlSourcePath :: FilePath -> FilePath
 indexHtmlSourcePath =
   Shake.dropDirectory1
@@ -448,19 +502,25 @@ indexHtmlSourcePath =
     . Shake.dropTrailingPathSeparator
     . Shake.dropFileName
 
+-- | Reads a UTF-8 file as a build input.
 readFile :: FilePath -> Action T.Text
 readFile fp = do
   Shake.need [fp]
   content <- Shake.liftIO $ TU.readFile fp
+  -- Recording the read makes dependents rebuild when the file changes.
   Shake.trackRead [fp]
   return content
 
+-- | Writes a UTF-8 file as a build output.
 writeFile :: FilePath -> T.Text -> Action ()
 writeFile fp content = do
   Shake.liftIO $ TU.writeFile fp content
+  -- Recording the write lets Shake track outputs for incremental builds and
+  -- pruning.
   Shake.trackWrite [fp]
 
--- Delete generated files in the output directory that are no longer part of the build.
+-- | Prune callback for 'Shake.shakeArgsPrune': removes outputs that this build
+-- did not produce.
 pruneStaleFiles :: [FilePath] -> IO ()
 pruneStaleFiles live = do
   exists <- doesDirectoryExist outputDir
@@ -486,6 +546,8 @@ pruneStaleFiles live = do
 
 -- Pandoc utils
 
+-- | Decodes the YAML front matter into @a@ and renders the body, rewriting
+-- site-root-relative links and images with 'baseUrl'.
 markdownToHtml :: (MonadAction m, FromJSON a) => T.Text -> FilePath -> m (a, T.Text)
 markdownToHtml baseUrl filePath = liftAction $ do
   content <- readFile filePath
@@ -496,11 +558,13 @@ markdownToHtml baseUrl filePath = liftAction $ do
     meta' <- fromMeta meta
     return (meta', html)
   where
+    -- Additional Markdown extensions can be enabled here.
     readerOptions =
       Pandoc.def {Pandoc.readerExtensions = Pandoc.pandocExtensions}
     writerOptions =
       Pandoc.def {Pandoc.writerExtensions = Pandoc.pandocExtensions}
 
+    -- Pandoc's Meta has no FromJSON instance, so the value goes through Aeson.
     fromMeta (Meta meta) =
       A.fromJSON . A.toJSON <$> traverse metaValueToJSON meta >>= \case
         A.Success res -> pure res
@@ -518,10 +582,14 @@ markdownToHtml baseUrl filePath = liftAction $ do
           . Pandoc.writePlain Pandoc.def
           $ Pandoc mempty m
 
+    -- This runs Pandoc's pure pipeline in IO and turns its errors into build
+    -- failures.
     runPandoc action =
       Pandoc.runIO (Pandoc.setVerbosity Pandoc.ERROR >> action)
         >>= either (fail . show) return
 
+    -- Only site-root-relative URLs are rewritten; relative and external URLs
+    -- are left alone.
     rewriteLinks = Pandoc.walk $ \case
       Link attr inlines (url, title) ->
         Link attr inlines (prependBaseUrl url, title)
@@ -536,6 +604,8 @@ markdownToHtml baseUrl filePath = liftAction $ do
 
 -- Mustache utils
 
+-- | Applies a template to a context. Fails on missing variables or
+-- partials instead of rendering blanks.
 applyTemplate :: (ToJSON a) => String -> a -> RAction T.Text
 applyTemplate templateName context = do
   ctx <- ask
@@ -549,6 +619,7 @@ applyTemplateAndWrite :: (ToJSON a) => String -> FilePath -> a -> RAction ()
 applyTemplateAndWrite templateName outputPath context =
   applyTemplate templateName context >>= lift . writeFile outputPath
 
+-- | Compiles a Mustache template and tracks its partials as dependencies.
 readTemplate :: FilePath -> Action Mus.Template
 readTemplate templatePath = do
   Shake.need [templatePath]
@@ -558,6 +629,7 @@ readTemplate templatePath = do
       $ Mus.localAutomaticCompile templatePath
   case eTemplate of
     Right template -> do
+      -- Tracking partials makes pages rebuild when a partial changes.
       Shake.need . Mus.getPartials . Mus.ast $ template
       Shake.putInfo $ "Read " <> templatePath
       return template
@@ -577,12 +649,16 @@ feedAuthor AuthorConfig {..} =
       personOther = []
     }
 
+-- | Converts a post to an Atom feed entry.
 mkPostEntry :: Post -> RAction Atom.Entry
 mkPostEntry post@Post {..} = do
   let siteUrl = post.config.url
       authors = post.config.authors
+      -- post.url is relative in DEV, so make it absolute for the feed.
       entryUrl = if siteUrl `T.isPrefixOf` post.url then post.url else siteUrl <> post.url
       entryUpdated = T.pack $ formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%SZ" post.dateTime
+      -- A post's author names one of the configured profiles; a missing or
+      -- unknown name falls back to the first author.
       entryAuthor = fromMaybe (head authors) $ author >>= \n -> find ((== n) . name) authors
   return $
     Atom.Entry
@@ -604,12 +680,14 @@ mkPostEntry post@Post {..} = do
         entryOther = []
       }
 
+-- | Builds an Atom feed from its entries.
 mkFeed :: Atom.URI -> T.Text -> SiteConfig -> [Atom.Entry] -> Atom.Feed
 mkFeed feedUrl title config entries =
   let author = head config.authors
    in Atom.Feed
         { feedId = feedUrl,
           feedTitle = Atom.TextString title,
+          -- Assumes at least one entry; maximum fails on an empty list.
           feedUpdated = maximum $ map Atom.entryUpdated entries,
           feedAuthors = nubBy ((==) `on` Atom.personURI) $ concatMap Atom.entryAuthors entries,
           feedCategories = map Atom.newCategory . nub . map Atom.catTerm . concatMap Atom.entryCategories $ entries,
